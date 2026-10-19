@@ -1,0 +1,9 @@
+constituent,blend,slice,mae,rmse,raw_r2,season_mae_delta_vs_additive,season_mae_ci_low,season_mae_ci_high,seasons_favorable,final_beta,analysis_status
+TEAM_01,half,all,8.079225,10.812865,0.124991,-0.012953,-0.048843,0.022937,6,0.5,post_run_read_only
+TEAM_01,half,novel,8.860941,11.792743,0.109477,,,,,0.5,post_run_read_only
+TEAM_01,global,all,8.076303,10.814262,0.124765,-0.015722,-0.045216,0.013773,6,0.415458,post_run_read_only
+TEAM_01,global,novel,8.861359,11.798595,0.108593,,,,,0.415458,post_run_read_only
+TEAM_1,half,all,8.056769,10.801797,0.126781,-0.035358,-0.080871,0.010155,6,0.5,post_run_read_only
+TEAM_1,half,novel,8.846448,11.783344,0.110896,,,,,0.5,post_run_read_only
+TEAM_1,global,all,8.057603,10.805054,0.126254,-0.034364,-0.073893,0.005165,6,0.464879,post_run_read_only
+TEAM_1,global,novel,8.853011,11.791969,0.109594,,,,,0.464879,post_run_read_only

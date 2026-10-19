@@ -1,0 +1,12 @@
+// Lineup Lab at https://lineuplab.dev: an assets-only Cloudflare Worker serving the built site.
+// Build:  PYTHONPATH=. python -u tool/build_lineups.py --site --out SITE_DIR   (then: node scripts/page_check.mjs SITE_DIR index.html)
+// Deploy: npx wrangler@4 deploy --config tool/wrangler.jsonc --assets SITE_DIR   (Adam's account; `npx wrangler@4 login` once)
+{
+  "name": "lineuplab",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "lineuplab.dev", "custom_domain": true },
+    { "pattern": "www.lineuplab.dev", "custom_domain": true }
+  ]
+}

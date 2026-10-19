@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Local data, features, checkpoints and run outputs. Never committed;
+# compact evidence that a report depends on goes in reports/evidence/.
+experiments/cache/
+cache/
+*.pkl
+*.pickle
+*.pt
+*.npy
+*.npz
+
+# Logs and local scratch
+*.log
+logs/
+
+# Local environment and credentials
+.env
+.DS_Store
+
+# Small golden fixtures for parity tests are tracked.
+!tests/fixtures/
+!tests/fixtures/**

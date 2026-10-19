@@ -1,0 +1,22 @@
+{
+  "interpretation": "POST_HOC_DIAGNOSTIC_NOT_CAUSAL_OR_A_NEW_SCORER",
+  "quarters": 44,
+  "valid_possessions": 2505033.0,
+  "all_conversion_error_pts100": 0.023148073967275636,
+  "cohort_error_pts100": {
+    "False": 0.5896377448712461,
+    "True": -1.0285969560090837
+  },
+  "negative_gap_quarters": 41,
+  "negative_gap_seasons": 11,
+  "gap_season_bootstrap_95": [
+    -1.9088073469310574,
+    -1.3652326467969345
+  ],
+  "matched_player_location_gap_pp": -0.6824774308921499,
+  "focus_top5_net_shortfall_fraction": 0.19279675031301358,
+  "focus_noncorner_three_shortfall_fraction": 0.5265118880134109,
+  "verified_input_arrays": 8,
+  "independent_game_parity_rows": 1391,
+  "independent_game_parity_max_error": 7.105427357601002e-15
+}

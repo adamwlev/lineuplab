@@ -1,0 +1,188 @@
+{
+  "status": "PASS",
+  "checks": {
+    "frozen_native_dependencies": 284,
+    "review_input_hashes": 104,
+    "independent_point_checks": 192,
+    "bias_summary_input_hashes": 8
+  },
+  "queue_receipts": [
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_06_v20_prod/training_queue",
+      "jobs": 904,
+      "seconds": 175980.77674979204
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/controls",
+      "jobs": 1,
+      "seconds": 489.2193396668881
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/events",
+      "jobs": 48,
+      "seconds": 980.0023358331528
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/diagnostics",
+      "jobs": 48,
+      "seconds": 573.2027929159813
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/roles",
+      "jobs": 48,
+      "seconds": 185.86421795887873
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/observed",
+      "jobs": 48,
+      "seconds": 565.7775596249849
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/average",
+      "jobs": 48,
+      "seconds": 20084.077372667147
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/basketball",
+      "jobs": 10,
+      "seconds": 129.84680341603234
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/uncertainty",
+      "jobs": 1,
+      "seconds": 1887.3731468329206
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/fixture_uncertainty",
+      "jobs": 10,
+      "seconds": 14.300091166980565
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/risk",
+      "jobs": 48,
+      "seconds": 30571.40055120783
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/risk_audit",
+      "jobs": 48,
+      "seconds": 343.956138583133
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/persistence",
+      "jobs": 1,
+      "seconds": 111.12001845799387
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/summary",
+      "jobs": 1,
+      "seconds": 208.21504020900466
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/native_audit",
+      "jobs": 1,
+      "seconds": 745.0845117920544
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/point_audit",
+      "jobs": 1,
+      "seconds": 4368.531429790892
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/uncertainty_audit",
+      "jobs": 1,
+      "seconds": 198.69279770785943
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/average_audit",
+      "jobs": 48,
+      "seconds": 235.15873666713014
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/basketball_audit",
+      "jobs": 10,
+      "seconds": 16.84651624993421
+    },
+    {
+      "queue": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/downstream_audit",
+      "jobs": 1,
+      "seconds": 576.6360335419886
+    }
+  ],
+  "inputs": {
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/manifest.json": "26e6faa572f34e13039798d302a45303eff6f97c9463ecf16e913479641e5176",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/manifest.json": "3d84469ae79f50cff07c492bc00be50d6d87c4a6c0e8254e03280be1b05252d6",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/complete.json": "f5c3c99699b40df9143025bd81895595ae6b8a2e9fa2c13f205e094e5cd1af44",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/status.json": "33241ce334cc2555be11027af9239d0bf69bda4df683d4f8f661e0b4da14406e",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/training_queue/complete.json": "8a5b00de9dbb83f88800f79e843ae28d0989bdf8001e7c07e15b51e46e19d46b",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/training_queue/summary.json": "259b8352c3d4ba1ce9f5225f4870d3063f5ab64529ec1a4dc63345e2849c0174",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/training_queue/status.json": "6d1a26199c1a36e93fa9b7cf3407721433838e79eb30c4d908d14ab7a5b08abb",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/controls/complete.json": "5f98a6c28ad3efede3bde797c5663523eb23a1e35e4e576ccb0f1eeae342167a",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/controls/summary.json": "3a95df8f17390ca4ce0ad2e7c7f41f69a962c6a3692cb2f4f5864d625c840b7a",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/events/complete.json": "4ed56769c269f98292bd33c6416fce3e2686c7753bfb20d365363407c8dff645",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/events/summary.json": "116fbf45ff6e20aee059e0560f74c5e784984899f12a8e788935a661438e6e6d",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/diagnostics/complete.json": "a0140747e85226dfe0205c287ca37c43c80a7df70c8f0758b99bb9404b1de516",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/diagnostics/summary.json": "74820550409ee7bd7dfe6940274df8c2bad131ac642fb88b490ebd80330396ed",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/roles/complete.json": "97543089ea1095e40f0efdd42cd387fc07f7e7ab746c82f47f61bc97c2f83ab2",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/roles/summary.json": "c524d16f2754dc5e41e63aaf9afba1e7afb1d65cc9f90b66b28465215fbccf23",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/observed/complete.json": "a615c28abc849f8b0b8d9b04490bd8c0ff280194377047a66a875b12846d70f0",
+    "experiments/cache/joint_capability_2026_10_06_v20_prod/posttrain/queues/observed/summary.json": "9855f0ec0b7d89910f504fd3dda37b74f849916e5ba16b4ee7dbf77205b91868",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/average/complete.json": "00ba1b8df30ce7b63e81eef84dbfcaa6aedd143e0e75eb3522454b8c104fe10e",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/average/summary.json": "3b22de06daacdde17f8b3040a1240d366258cca9a8652456eae165869bcf66ab",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/basketball/complete.json": "f296eb1a2666a04286ee3a78936ee3cab1c5c65bfca8a243396c5d1a99a685a5",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/basketball/summary.json": "2421fc4ec23936fbc664a31425b4cf16ac9ca5bcf6d1eaeaa883c501eca8d5ec",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/uncertainty/complete.json": "d4ff1796ce521168501c989d86c769e9ebc8e9521fd01d92d123b548ac14b304",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/uncertainty/summary.json": "11f410b4e8c934a9864cee6b581ad84fd0cb8eb65c8ff5e6d07607f68f003243",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/fixture_uncertainty/complete.json": "362a95e1c83cd5fa333c9d0064273eaac1e57edfa8c3a711d30f18779a4bf3c8",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/fixture_uncertainty/summary.json": "a4d210d51ea2f41cdd3146bb51e6dbbc61a3ea8fdbd00d17004a945e55ffb3d9",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/risk/complete.json": "7d68562a3cab81c054613122fac56d089f63e729424be95e5cb542b047c07b99",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/risk/summary.json": "23316e26f190101e063d797e3f3e96b12d5ffaef2fe66c89f5def98528d73556",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/risk_audit/complete.json": "8b4fc36a47a370195ca62bb1cccca9f4fa9dc5e6561efd0cb2d3ff36c5cfd0b0",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/risk_audit/summary.json": "6eca32f4376ae40267f8db2e3dde7568be7ad8e607ae0701d8e6e38eed6264a1",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/persistence/complete.json": "c904d236047512517e9dd72772ec8d94711d4b91ad8fceea1b0b9fdc5c3b814e",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/persistence/summary.json": "d02aa1e71e90c8a1a5d3b4f2606ad3f5e847ceed71009a3e6a0e21b1527599d6",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/summary/complete.json": "6d5db0fffb9d961de16433f5c9a96bafcb05f861855b068770c4c22fe228e53d",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/summary/summary.json": "3bbea9aad553a68d8dea04856e707a98885c400d36570769ca184cf9f53b023e",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/native_audit/complete.json": "6b2e8549e01c981b2af3573d62eef8b94e3966c4e7a7b900c0d3d229625665c3",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/native_audit/summary.json": "747e127e75906da1e3981a8128c7ac57725211cf12e40041b19a637ef096be3e",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/point_audit/complete.json": "ae0ea6866d753876b3836e9e01e0b269b0568bad559bc6c2e2c56bc586fbfded",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/point_audit/summary.json": "a302b48e5f9ff28aef6c3041cb4b88cd552a0aafa113e4d5a3c620050944ac70",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/uncertainty_audit/complete.json": "1c7381a73dafe7eb203e5ef753cc2f72d642cffaa2ae2b5a44ffbe9d5f3c272c",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/uncertainty_audit/summary.json": "9903381b0dcd6e7592eb71eba05b7ef57db0a486f46d6695c3b1be6b1ed83ee6",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/average_audit/complete.json": "89cce39d602f499fdfe135c38950181957a85e3b1885856bf4c63d712f80f65b",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/average_audit/summary.json": "a4bd1a50e94c9d12806c86161ced3d7324cc85f95c3dcace1118752e4365d44d",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/basketball_audit/complete.json": "4e64c7cccfb4943f39c69305304a83e31d6485f889dfa0fce45f680894e76952",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/basketball_audit/summary.json": "aeab91f23e90bcd74fa47347d08ab953161aeb8751f3e8425b03ae72a90f9815",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/downstream_audit/complete.json": "e57a5b1c2e24c503aa2d406a4c01d162da1f98cc190dbd78babe5bcb4e97cff2",
+    "experiments/cache/joint_capability_2026_10_08_v20_posttrain1/queues/downstream_audit/summary.json": "482e7d467e84828baba7ec343faed8de62e9707537800cee1c4c54d5fd70e803",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/provenance.json": "ff198a17717a37709ecd4bec1542777505d410e825485d3b3a7fd7e1967bee88",
+    "experiments/cache/v20_bias_followup_summary_2026_10_06/provenance.json": "87deb67ef68b502152ad74e58a96c4083069259933a6ff5f76c190618b58541b",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/point_recomputed.csv": "9ad334dd1d52b218ce66ab9d8e630f2acf2bdff4c65e9c7d035edbde9c2ad2db",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/registered_point_contrasts.csv": "fc9630bd89c6c7f02ab0dcb0a5ab1e2be336585246e3b8519f0314d645b29ab9",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/registered_event_contrasts.csv": "0b84f46ac183fc2a952689ad088efa8a87ec63cf49d364eb6baf6f6a72c77140",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/registered_uncertainty_contrasts.csv": "90fd79bc4deae81d3c6a8f91cbd124ecf4ef8e65499a063c527d7ed110c3f1f5",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/center_matchups.csv": "253fd6328185cc0cd015e290d342256e4f9e6e355361f0cf50c78e7bfe092d52",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/risk_population.csv": "d1442165e784b9a02c8218fac2353589308dad8ecda7b677ed23881a704902c2",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/training_summary.csv": "5ba30ab1424a902f142badcd2b082edd9854f8e1b691307a0537e52c150a459f",
+    "experiments/cache/joint_capability_2026_10_09_v20_review1/bias_summary.csv": "a05c031c5e243dcbb1add2f11528fc48105535d573f7100b466c0f1f3972a22a",
+    "experiments/cache/v20_bias_followup_summary_2026_10_06/summary.json": "ff36f6ef9a2a1b64bee19372aaebdbf7b78a9116974d105bec379308f4aa4534"
+  },
+  "outputs": {
+    "registered_point_contrasts.csv": "fc9630bd89c6c7f02ab0dcb0a5ab1e2be336585246e3b8519f0314d645b29ab9",
+    "registered_uncertainty_contrasts.csv": "90fd79bc4deae81d3c6a8f91cbd124ecf4ef8e65499a063c527d7ed110c3f1f5",
+    "center_matchups.csv": "dd53731df91134f676263dbc879ddbc5cedd640cb6af3d81644c2aa40556db9d",
+    "registered_event_contrasts.csv": "0b84f46ac183fc2a952689ad088efa8a87ec63cf49d364eb6baf6f6a72c77140",
+    "bias_followup_summary.json": "e1775733b0b87a24339bd22f66f4150fe0df7e6fb17234f02f36bdac302802d0",
+    "point_recomputed.csv": "3f97f2a15e8105873b21fff85fd0c1f792cd48c7362f2e8d90957297a92c01f1",
+    "bias_summary.csv": "62124b9bf4c1ab4e32adb2cb64827e2e32a944e5fcc22bc896eb6799ae13c14c",
+    "risk_population.csv": "d1442165e784b9a02c8218fac2353589308dad8ecda7b677ed23881a704902c2",
+    "training_summary.csv": "e6439fce2e3c29e3fe505f098e73fbe7028772cb05729c92769affab761afd8e"
+  },
+  "source_run": "experiments/cache/joint_capability_2026_10_06_v20_prod",
+  "continuation": "experiments/cache/joint_capability_2026_10_08_v20_posttrain1",
+  "review": "experiments/cache/joint_capability_2026_10_09_v20_review1",
+  "producer_sha256": "51d69ff350cbc71abb9eb5e99794bf8935cf7e7bea06d369f4bae7e5a11ffeaf",
+  "source_writes": false,
+  "neural_fits": 0,
+  "inference": false,
+  "interpretation": "Small evidence bundle, not a backup of local data/checkpoints; reviewed development evidence, not promotion."
+}

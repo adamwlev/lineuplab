@@ -1,0 +1,1501 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lineup Lab</title>
+<meta name="author" content="Adam Levin and Claude Code">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a scorer's table. Two team cards face each other across the result; the reasons and the breakdown sit below. */
+:root {
+  --paper: #f4f6f8; --panel: #ffffff; --ink: #15191f; --muted: #5a6472; --line: #d8dde4;
+  --accent: #b9531f; --accent-soft: #f4e2d7; --band: #a9bdd1; --band-strong: #5f7f9f;
+  --good: #2c7a4b; --bad: #b0393a; --chip: #eceff3; --band-soft: #e3ebf3;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101318; --panel: #171b21; --ink: #e8ebf0; --muted: #9aa3b0; --line: #2a3038;
+    --accent: #e0814b; --accent-soft: #3b261b; --band: #3d536a; --band-strong: #8fb0cf;
+    --good: #5fb585; --bad: #e0716f; --chip: #222831; --band-soft: #1f2a36; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #101318; --panel: #171b21; --ink: #e8ebf0; --muted: #9aa3b0; --line: #2a3038;
+  --accent: #e0814b; --accent-soft: #3b261b; --band: #3d536a; --band-strong: #8fb0cf;
+  --good: #5fb585; --bad: #e0716f; --chip: #222831; --band-soft: #1f2a36; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+h1 { font-size: 2.4rem; line-height: 1; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+header { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: end; justify-content: space-between; }
+header .lede { color: var(--muted); max-width: 60ch; }
+.setting { display: grid; gap: 4px; }
+.setting label { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.segmented button { border: 0; background: transparent; color: var(--ink); font: 500 .9rem var(--body); padding: 7px 12px; cursor: pointer; }
+.segmented button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.segmented button:focus-visible, select:focus-visible, input:focus-visible, .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.table { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 980px) { .table { grid-template-columns: minmax(0, 1fr); } .wrap { padding-bottom: 84px; } }
+.team { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.team-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.team-head h2 span { color: var(--accent); }
+select, input[type="text"], input[type="number"] { font: 15px var(--body); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+.slot { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto; gap: 4px 6px; align-items: center; }
+.slot select { min-width: 5.8rem; padding-inline: 6px; }
+.slot .n { font-family: var(--display); font-weight: 600; color: var(--muted); text-align: right; }
+.slot input { width: 100%; }
+.slot.bad input { border-color: var(--bad); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.preset { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 3px 10px; font: 500 .8rem var(--body); cursor: pointer; }
+.average-note { color: var(--muted); font-size: .92rem; }
+
+.result { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.result-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.status { font-size: .85rem; color: var(--muted); }
+.status.busy::before { content: ""; display: inline-block; width: .6em; height: .6em; border-radius: 50%; background: var(--accent); margin-right: .45em; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .status.busy::before { animation: none; } }
+.metric { display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); gap: 4px 12px; align-items: center; }
+.metric .label { font-size: .8rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.metric .value { font-family: var(--display); font-weight: 700; font-size: 2.3rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.metric .range { grid-column: 2; font-size: .82rem; color: var(--muted); }
+.metric svg { width: 100%; height: 34px; display: block; }
+.metric.net .value.pos { color: var(--good); }
+.metric.net .value.neg { color: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .78rem; color: var(--muted); }
+.legend i { display: inline-block; width: 18px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+.below { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 16px; }
+@media (max-width: 860px) { .below { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; align-content: start; }
+.reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.reasons li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; }
+.chip { font: 600 .7rem var(--body); text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; background: var(--chip); color: var(--muted); white-space: nowrap; margin-top: 2px; }
+.chip.shape { background: var(--accent-soft); color: var(--accent); }
+.chip.era { background: var(--chip); color: var(--band-strong); }
+.chip.assume { background: var(--ink); color: var(--paper); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+th, td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+td.num { font-family: var(--mono); }
+.up { color: var(--good); } .down { color: var(--bad); }
+.channels svg { width: 100%; display: block; }
+.breakdowns { display: grid; gap: 16px; }
+footer { color: var(--muted); font-size: .85rem; display: grid; gap: 6px; }
+footer p { max-width: 100ch; }
+details.assume summary { cursor: pointer; font-size: .84rem; color: var(--muted); padding-block: 6px; }
+details.assume summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.error { color: var(--bad); }
+
+/* Type badges under each player */
+.badges { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; min-height: 0; }
+.badge { font: 500 .7rem/1.5 var(--body); padding: 0 6px; border-radius: 999px; background: var(--chip); color: var(--muted); white-space: nowrap; }
+.badge.o { background: var(--accent-soft); color: var(--accent); }
+.badge.d { background: var(--band-soft); color: var(--band-strong); }
+.pvalue { grid-column: 2 / 4; font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pvalue strong { font-family: var(--mono); font-weight: 600; }
+.pvalue abbr { text-decoration: underline dotted; cursor: help; }
+.pvalue .approx { font-style: italic; }
+.dig { border: 0; background: none; color: var(--accent); font: 500 .78rem var(--body); padding: 0 0 0 6px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.dig:focus-visible, .sheet-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+dialog.sheet { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); padding: 0; width: min(1000px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+dialog.sheet::backdrop { background: rgba(10, 14, 20, .45); }
+.sheet-body { display: grid; gap: 16px; padding: 18px 20px 20px; }
+.sheet-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; justify-content: space-between; }
+.sheet-head h2 { font-size: 1.6rem; }
+.sheet-head .sub { color: var(--muted); font-size: .88rem; }
+.sheet-close { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 3px 12px; font: 500 .82rem var(--body); cursor: pointer; }
+.sheet-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .sheet-cols { grid-template-columns: minmax(0, 1fr); } }
+.est { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.est h3 { font-size: .95rem; }
+.est .intro { font-size: .8rem; color: var(--muted); }
+.est ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.est li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding-block: 6px; border-top: 1px solid var(--line); font-size: .86rem; }
+.est li .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
+.est li .v.good { color: var(--good); } .est li .v.bad { color: var(--bad); }
+.est li .q { grid-column: 1 / 3; font-size: .74rem; color: var(--muted); }
+.est .none { font-size: .82rem; color: var(--muted); padding-block: 6px; border-top: 1px solid var(--line); }
+.sheet details summary { cursor: pointer; font-size: .84rem; color: var(--muted); }
+.sheet table { border-collapse: collapse; font-size: .8rem; width: 100%; }
+.sheet th, .sheet td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.sheet td.r, .sheet th.r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.sheet .note { font-size: .8rem; color: var(--muted); max-width: 90ch; }
+
+/* Combination effects: the centerpiece */
+.combos { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.combo-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 8px 24px; }
+.combo-head h2 { font-size: 1.7rem; }
+.combo-head p { color: var(--muted); max-width: 72ch; font-size: .92rem; }
+.combo-totals { display: flex; gap: 18px; flex-wrap: wrap; }
+.combo-totals div { display: grid; }
+.combo-totals .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.combo-totals .v { font-family: var(--display); font-weight: 700; font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.combo-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+@media (max-width: 860px) { .combo-cols { grid-template-columns: minmax(0, 1fr); } }
+.combo-col h3 { margin-bottom: 2px; }
+.effect { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.effect .title { font-weight: 600; }
+.effect .pts { font-family: var(--mono); font-size: 1.05rem; text-align: right; white-space: nowrap; }
+.effect .detail { grid-column: 1 / 3; font-size: .86rem; color: var(--muted); display: grid; gap: 4px; }
+.effect .who { color: var(--ink); }
+.effect .row2 { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.effect svg.curve { width: 190px; height: 64px; display: block; flex: none; }
+.effect .curve-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.effect .curve-note { font-size: .78rem; max-width: 34ch; }
+.pts.good { color: var(--good); } .pts.bad { color: var(--bad); }
+.note { border-top: 1px solid var(--line); padding-top: 10px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; font-size: .88rem; }
+.chip.test { background: var(--accent); color: var(--paper); }
+.chip.ok { background: var(--chip); color: var(--good); }
+details.more summary { cursor: pointer; color: var(--muted); font-size: .88rem; padding: 6px 0; }
+details.library { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+details.library > summary { cursor: pointer; font-family: var(--display); font-weight: 700; font-size: 1.2rem; }
+details.library .inner { display: grid; gap: 12px; padding-top: 12px; }
+td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
+.adding { font-size: .84rem; color: var(--muted); }
+.adding strong { color: var(--ink); font-weight: 600; }
+
+/* The missing piece: every candidate for one of Team A's spots */
+.piece { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.piece-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 10px 24px; }
+.piece-head h2 { font-size: 1.7rem; }
+.piece-head p { color: var(--muted); max-width: 72ch; font-size: .92rem; }
+.piece-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.piece-controls select { max-width: 15rem; }
+.piece-cap { display: flex; gap: 6px; }
+.piece-cap input { width: 5.5rem; font-variant-numeric: tabular-nums; }
+.piece-cap input:disabled { opacity: .45; }
+.go { border: 1px solid var(--ink); background: var(--ink); color: var(--paper); border-radius: 6px; padding: 6px 16px; font: 600 .9rem var(--body); cursor: pointer; }
+.go:disabled { opacity: .45; cursor: default; }
+.go:focus-visible, .use:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.piece table td.who, .piece table th.who { text-align: left; white-space: normal; min-width: 10rem; }
+@media (max-width: 640px) { .piece table .od { display: none; } .piece table td.who { min-width: 8rem; } }
+.piece table td.who .s { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+.piece table tr.now td { color: var(--muted); }
+.piece table tr.now td.who { font-style: italic; }
+.piece table tr.used td { background: var(--band-soft); }
+.piece .net { font-weight: 600; }
+.piece .pending { color: var(--muted); }
+.use { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 2px 10px; font: 500 .8rem var(--body); cursor: pointer; }
+.piece-note { font-size: .84rem; color: var(--muted); max-width: 90ch; }
+.piece-hint { font-size: .84rem; color: var(--muted); }
+.piece-hint:empty { display: none; }
+.piece.stale table { opacity: .5; }
+.use:disabled, .piece.stale .use { opacity: .4; cursor: default; pointer-events: none; }
+.slot.pending .dig { pointer-events: none; }
+.mini { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); font-size: .9rem; }
+.mini strong { font-family: var(--mono); }
+.mini.stale { color: var(--muted); }
+.mini a { color: var(--accent); white-space: nowrap; }
+@media (min-width: 981px) { .mini { display: none !important; } }
+/* tables that scroll sideways show a shadow at the hidden edge */
+.scroll { background: linear-gradient(to right, var(--panel) 30%, transparent) left / 28px 100% no-repeat local,
+                      linear-gradient(to left, var(--panel) 30%, transparent) right / 28px 100% no-repeat local,
+                      radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 28%, transparent), transparent) left / 12px 100% no-repeat scroll,
+                      radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 28%, transparent), transparent) right / 12px 100% no-repeat scroll; }
+.piece table th:first-child, .piece table td:first-child { position: sticky; left: 0; background: var(--panel); z-index: 1; min-width: 2.6rem; }
+.piece table th.who, .piece table td.who { position: sticky; left: 2.6rem; background: var(--panel); z-index: 1; }
+.piece table td.who .use { margin-left: 6px; }
+.note .chip { align-self: start; }
+.rng-inline { display: none; }
+.breakdowns th { white-space: normal; vertical-align: bottom; }
+#assumptions td:first-child { white-space: normal; min-width: 9rem; }
+/* bars for the offense breakdown, readable at any width */
+.bars { display: grid; gap: 6px; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr) 3.4rem; gap: 8px; align-items: center; font-size: .86rem; }
+.bar-row.total { font-weight: 600; }
+.bar-track { position: relative; height: 12px; }
+.bar-track::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; border-left: 1.5px solid var(--line); }
+.bar { position: absolute; top: 0; height: 12px; border-radius: 2px; }
+.bar.pos { left: 50%; background: var(--good); } .bar.neg { right: 50%; background: var(--bad); }
+.bar-row.total .bar { background: var(--ink); }
+.bar-value { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .bar-row { grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr) 3.2rem; }
+  .slot { grid-template-columns: 1.1rem minmax(0, 1fr) auto; }
+  .piece table .rng { display: none; }
+  .piece table th:first-child, .piece table td:first-child { min-width: 2.2rem; width: 2.2rem; }
+  .piece table th.who, .piece table td.who { left: 2.2rem; min-width: 0; width: 8.6rem; max-width: 8.6rem; }
+  .rng-inline { display: block; font-size: .75rem; color: var(--muted); font-weight: 400; }
+  #library table, #library tbody, #library tr, #library td { display: block; width: 100%; }
+  #library thead { display: none; }
+  #library tr { border-top: 1px solid var(--line); padding-block: 8px; }
+  #library td { border: 0; padding: 2px 0; text-align: left; white-space: normal; min-width: 0; }
+  #library td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font-size: .78rem; }
+}
+/* thumbs: bigger targets, and 16 px fields so phones don't zoom on focus */
+@media (pointer: coarse), (max-width: 640px) {
+  .presets { gap: 8px; } .preset { padding: 7px 12px; }
+  .segmented button { min-height: 40px; }
+  .use { padding: 6px 12px; }
+  .go { min-height: 44px; }
+  .mini a { padding-block: 10px; }
+  .dig { padding: 8px 6px 8px 10px; }
+  select, input[type="text"], input[type="number"] { min-height: 40px; font-size: 16px; }
+}
+
+/* QA pass (2026-10-18): grid columns that can shrink, stale results, slot messages, the unusual-lineup callout */
+.card, .result, .team, .combos, .piece { grid-template-columns: minmax(0, 1fr); }
+details.assume { min-width: 0; }
+.sheet .note { display: block; border-top: 0; padding-top: 0; }
+.status.warn { color: var(--bad); font-weight: 600; }
+.is-stale #metrics, .is-stale #adding, .is-stale .legend, .is-stale #result-notes { opacity: .3; }
+#combos.is-stale, #below.is-stale { opacity: .4; }
+.slot-msg { grid-column: 2 / 4; font-size: .8rem; color: var(--bad); display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.slot-msg.hint { color: var(--muted); }
+.slot-msg:empty { display: none; }
+.slot-msg button { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 1px 8px; font: 500 .78rem var(--body); cursor: pointer; }
+.slot.pending .badges, .slot.pending .pvalue { opacity: .35; }
+.team-hint { font-size: .82rem; color: var(--muted); }
+.presets-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); align-self: center; }
+.rule-help { font-size: .76rem; color: var(--muted); max-width: 36ch; }
+#result-notes { display: grid; gap: 8px; }
+#result-notes:empty { display: none; }
+.callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 8px 10px; border-radius: 4px; font-size: .88rem; max-width: none; }
+.callout a { color: inherit; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div style="display:grid;gap:6px">
+      <h1>Lineup Lab</h1>
+      <p class="lede">Pick any five players, each as of one season between 2001–02 and 2025–26. The model adds up what each player brings, then applies <strong>combination effects</strong>: pairs of players who play differently together than apart. You get offense, defense and net (points scored minus points allowed), all per 100 possessions, with an 80% range for the lineup's long-run level (an 8-in-10 span). <a href="model.html">How the model works</a>.</p>
+    </div>
+    <div class="setting">
+      <label id="rule-label">Player levels</label>
+      <div class="segmented" role="group" aria-labelledby="rule-label">
+        <button id="rule-relative" type="button" aria-pressed="true" title="Each player is placed relative to the league he played in">Relative to their league</button>
+        <button id="rule-as-was" type="button" aria-pressed="false" title="Each player keeps his raw rates in today's league">As they played</button>
+      </div>
+      <p class="rule-help">For players from other seasons: rated against their own season's league, or with their raw numbers as they were. Relative translates an older player's habits into today's league (a 2016–17 shooter takes even more threes now), so older lineups can come out several points apart between the two. A lineup of 2025–26 players gets the same forecast either way.</p>
+    </div>
+  </header>
+
+  <section class="table">
+    <div class="team" id="team-a"><p class="muted">Loading the player list…</p></div>
+    <div class="result" id="result" aria-live="polite">
+      <div class="result-head"><h2 id="result-title">Against a league-average lineup</h2><span class="status busy" id="status">Loading the model</span></div>
+      <div id="metrics"></div>
+      <div id="result-notes"></div>
+      <p class="adding" id="adding"></p>
+      <div class="legend"><span title="The model's 8-in-10 span for the lineup's long-run level (its rating with game-to-game luck removed)"><i style="background:var(--band)"></i>80% range</span><span><i style="background:var(--ink);width:3px"></i>forecast with combinations</span><span><i style="background:transparent;border:2px solid var(--ink);width:9px;height:9px;border-radius:50%"></i>without combination effects</span><span><i style="background:var(--accent);width:8px;height:8px;border-radius:50%"></i>stricter defense view</span><span><i style="background:var(--muted);width:2px;height:12px"></i>league average</span></div>
+    </div>
+    <div class="team" id="team-b"><p class="muted">Loading the player list…</p></div>
+  </section>
+
+  <section class="piece" id="piece" aria-live="polite">
+    <div class="piece-head">
+      <div style="display:grid;gap:4px">
+        <h2>Find the missing piece</h2>
+        <p>Keep four of Team A and try every player in the fifth spot, against a league-average lineup or Team B's five, to find who fits best. Each candidate gets the full forecast, combination effects and range. <a href="model.html#missing-piece">How the search works</a>.</p>
+      </div>
+      <div class="piece-controls">
+        <div class="setting"><label for="piece-slot">Replace</label><select id="piece-slot"></select></div>
+        <div class="setting"><label for="piece-pool">Candidates</label><select id="piece-pool">
+          <option value="latest">2025–26 players</option>
+          <option value="any">All players, typical season</option>
+        </select></div>
+        <div class="setting"><label for="piece-against">Against</label><select id="piece-against">
+          <option value="average">A league-average lineup</option>
+          <option value="b">Team B's five</option>
+        </select></div>
+        <div class="setting"><label for="piece-cap-on">Overall quality</label><div class="piece-cap">
+          <select id="piece-cap-on" title="Leave out candidates whose overall quality (net, the linear approximation) is above a limit, for example to look only at players a team could realistically trade for">
+            <option value="any">Any</option>
+            <option value="most">At most</option>
+          </select>
+          <input type="number" id="piece-cap" step="0.1" min="-30" max="30" inputmode="decimal" disabled aria-label="Highest overall quality to include" title="Starts at the overall quality of the player being replaced">
+        </div></div>
+        <button type="button" class="go" id="piece-go" disabled>Find</button>
+      </div>
+    </div>
+    <p class="piece-hint" id="piece-hint"></p>
+    <span class="status" id="piece-status">The search starts once the model has loaded.</span>
+    <div class="scroll"><table id="piece-table" hidden></table></div>
+    <p class="piece-note" id="piece-note" hidden></p>
+  </section>
+
+  <section class="combos" id="combos" aria-live="polite">
+    <div class="combo-head">
+      <div style="display:grid;gap:4px">
+        <h2>Combination effects</h2>
+        <p>Pairings that play differently together than apart, beyond what adding up players assumes: learned from every pairing in real lineups, and <span class="n-measured">14</span> also measured one by one in real games. Each is small, but together they bend the forecast, most of all for lineups nobody would play. <a href="model.html#combinations">How they work</a>.</p>
+      </div>
+      <div class="combo-totals" id="combo-totals"></div>
+    </div>
+    <div class="combo-cols" id="combo-cols"></div>
+    <div id="combo-notes"></div>
+  </section>
+
+  <details class="library" id="library">
+    <summary>All <span class="n-measured">14</span> measured combinations, and how they were found</summary>
+    <div class="inner" id="library-inner"></div>
+  </details>
+
+  <section class="below" id="below">
+    <div class="card" id="reasons-card">
+      <h3>Why the range is this wide</h3>
+      <ul class="reasons" id="reasons"></ul>
+      <details class="assume"><summary>The forecast under each assumption</summary><div class="scroll"><table id="assumptions"></table></div></details>
+    </div>
+    <div class="card">
+      <h3 id="breakdown-title">How the offense gets its points</h3>
+      <div class="breakdowns" id="breakdowns"></div>
+    </div>
+  </section>
+
+  <div class="mini" id="mini" hidden><span id="mini-text"></span><a href="#result">See the forecast</a></div>
+
+  <footer>
+    <p>The forecast is a neural model of every possession's events, calibrated on earlier seasons, plus learned and measured combination effects. It uses no player identity, only each player-season's measured habits, skills and height; a player-season (for example Curry 2025–26) is the player as measured through the end of that season. "League average" means the 2025–26 lineups that played at least 100 possessions. Overall quality and the breakdowns are approximations of the model, and ranges for lineups nobody has played rest on named assumptions. <a href="model.html">How the model works</a>, including the data, the player estimates, the range and the accuracy checks.</p>
+    <p>Data: play-by-play from <a href="https://www.basketball-reference.com/">Basketball Reference</a> (Sports Reference LLC), 2001–02 through 2025–26. Everything runs in your browser: nothing you type is sent anywhere, and this browser remembers your last lineup so a reload keeps it. <a href="model.html#about">About this site</a>.</p>
+    <p>By Adam Levin and Claude Code. The code is open source on <a href="https://github.com/adamwlev/lineuplab">GitHub</a>, where questions and bug reports are welcome.</p>
+  </footer>
+</div>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <div style="display:grid;gap:2px"><h2 id="sheet-title">Player</h2><span class="sub" id="sheet-sub"></span></div>
+      <button type="button" class="sheet-close" id="sheet-close">Close</button>
+    </div>
+    <div id="sheet-content"></div>
+  </div>
+</dialog>
+<datalist id="player-list"></datalist>
+<script id="model-src" type="text/plain">/*LINEUP_MODEL_JS*/</script>
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const state = { rule: "relative", teamB: "average", meta: null, ready: false, pending: 0, seq: 0 };
+  const SIZES = /*FILE_SIZES*/null;                // bytes of meta.json, weights.txt, players.txt (tool/build_lineups.py)
+  let worker = null;
+
+  // ---- presets --------------------------------------------------------------------------
+  const PRESETS = [
+    { label: "Timberwolves 2025–26", season: 2026, names: ["Rudy Gobert", "Julius Randle", "Donte DiVincenzo", "Anthony Edwards", "Jaden McDaniels"] },
+    { label: "Nuggets 2025–26", season: 2026, names: ["Nikola Jokić", "Jamal Murray", "Aaron Gordon", "Michael Porter Jr.", "Russell Westbrook"] },
+    { label: "Warriors 2016–17", season: 2017, names: ["Stephen Curry", "Klay Thompson", "Kevin Durant", "Draymond Green", "Zaza Pachulia"] },
+    { label: "Spurs 2013–14", season: 2014, names: ["Tony Parker", "Danny Green", "Kawhi Leonard", "Tim Duncan", "Tiago Splitter"] },
+    { label: "Heat 2012–13", season: 2013, names: ["Mario Chalmers", "Dwyane Wade", "LeBron James", "Shane Battier", "Chris Bosh"] },
+    { label: "Celtics 2007–08", season: 2008, names: ["Rajon Rondo", "Ray Allen", "Paul Pierce", "Kevin Garnett", "Kendrick Perkins"] },
+    { label: "Cavaliers 2024–25", season: 2025, names: ["Darius Garland", "Donovan Mitchell", "Max Strus", "Evan Mobley", "Jarrett Allen"] },
+    { label: "Knicks 2025–26", season: 2026, names: ["Jalen Brunson", "Mikal Bridges", "OG Anunoby", "Karl-Anthony Towns", "Mitchell Robinson"] },
+    { label: "Five small guards", season: 2026, names: ["Trae Young", "Jalen Brunson", "Darius Garland", "Tyrese Maxey", "Donovan Mitchell"] },
+    { label: "Five centers", season: 2026, names: ["Rudy Gobert", "Steven Adams", "Mitchell Robinson", "Clint Capela", "Jarrett Allen"] },
+    { label: "Five Goberts", season: 2026, names: ["Rudy Gobert", "Rudy Gobert", "Rudy Gobert", "Rudy Gobert", "Rudy Gobert"] },
+    { label: "Five Jokićs", season: 2026, names: ["Nikola Jokić", "Nikola Jokić", "Nikola Jokić", "Nikola Jokić", "Nikola Jokić"] },
+  ];
+
+  // ---- player directory -------------------------------------------------------------------
+  // Names resolve forgivingly (QA, 2026-10-18): case, spacing and accents don't matter ("nikola jokic" is Nikola
+  // Jokić), and a fragment that fits one player only ("Porzingis") is that player; otherwise the slot says who it
+  // could be.
+  const FOLD = { "đ": "d", "ł": "l", "ø": "o", "æ": "ae", "œ": "oe", "ß": "ss", "ı": "i", "þ": "th" };
+  const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/[đłøæœßıþ]/g, (c) => FOLD[c]).replace(/[^a-z0-9]+/g, " ").trim();
+  const directory = { byLabel: new Map(), labelOf: new Map(), seasons: new Map(), byNorm: new Map(), labels: [], played: new Map() };
+  function buildDirectory(meta) {
+    const P = meta.players;
+    P.pid.forEach((p, r) => {
+      if (!directory.seasons.has(p)) directory.seasons.set(p, []);
+      directory.seasons.get(p).push({ season: P.season[r], row: r, poss: P.offense_possessions[r] + P.defense_possessions[r] });
+      directory.played.set(p, (directory.played.get(p) || 0) + P.offense_possessions[r] + P.defense_possessions[r]);
+    });
+    const count = new Map();
+    for (const name of Object.values(meta.names)) count.set(name, (count.get(name) || 0) + 1);
+    const options = [];
+    for (const [pid, name] of Object.entries(meta.names)) {
+      const s = directory.seasons.get(Number(pid)).map((x) => x.season).sort((a, b) => a - b);
+      const label = count.get(name) > 1 ? `${name} (${s[0]}–${s[s.length - 1]})` : name;
+      directory.byLabel.set(label, Number(pid));
+      directory.labelOf.set(Number(pid), label);
+      const k = norm(label);
+      directory.byNorm.set(k, directory.byNorm.has(k) ? null : Number(pid));     // null: two players share it
+      directory.labels.push([k.split(" "), label]);
+      options.push(label);
+    }
+    options.sort((a, b) => a.localeCompare(b));
+    const list = $("player-list");
+    const frag = document.createDocumentFragment();
+    for (const o of options) { const el = document.createElement("option"); el.value = o; frag.appendChild(el); }
+    list.appendChild(frag);
+  }
+  // A typed name: the player it means, or the players it could mean.
+  function resolveName(text) {
+    const t = text.trim(), k = norm(t);
+    if (directory.byLabel.has(t)) return { pid: directory.byLabel.get(t), matches: [] };
+    if (!k) return { pid: undefined, matches: [] };
+    if (directory.byNorm.get(k)) return { pid: directory.byNorm.get(k), matches: [] };
+    const words = k.split(" ");
+    const played = (l) => directory.played.get(directory.byLabel.get(l)) || 0;
+    const mostPlayed = (a, b) => played(b) - played(a);
+    const matches = directory.labels.filter(([ws]) => words.every((w) => ws.some((x) => x.startsWith(w)))).map(([, l]) => l).sort(mostPlayed);
+    if (matches.length === 1) return { pid: directory.byLabel.get(matches[0]), matches: [] };
+    if (matches.length) return { pid: undefined, matches };
+    // nothing starts that way: names within a typo or two of the whole name, or of the surname when one word is typed
+    const near = (ws) => Math.min(edits(k, ws.join(" ")), words.length === 1 ? edits(k, ws[ws.length - 1]) : Infinity);
+    const limit = Math.max(1, Math.floor(k.length / 6));
+    const close = directory.labels.map(([ws, l]) => [near(ws), l]).filter(([d]) => d <= limit).sort((p, q) => p[0] - q[0] || mostPlayed(p[1], q[1]));
+    return { pid: undefined, matches: [], close: close.slice(0, 4).map(([, l]) => l) };
+  }
+  function edits(a, b) {                           // Levenshtein distance, with adjacent swaps counting once
+    if (Math.abs(a.length - b.length) > 3) return Infinity;
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+    return d[a.length][b.length];
+  }
+  const pidByName = (name) => resolveName(name).pid;
+  const exactPid = (text) => { const t = text.trim(), k = norm(t); return directory.byLabel.get(t) ?? (k ? directory.byNorm.get(k) || undefined : undefined); };
+
+  // ---- team cards ---------------------------------------------------------------------------
+  function teamCard(side) {
+    const root = $("team-" + side);
+    const isB = side === "b";
+    root.innerHTML = "";
+    const head = document.createElement("div"); head.className = "team-head";
+    const h = document.createElement("h2"); h.innerHTML = `Team <span>${side.toUpperCase()}</span>`;
+    head.appendChild(h);
+    if (isB) {
+      const seg = document.createElement("div"); seg.className = "segmented"; seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Team B");
+      for (const [mode, text] of [["average", "League average"], ["five", "Choose a five"]]) {
+        const b = document.createElement("button"); b.type = "button"; b.id = "b-mode-" + mode; b.textContent = text;
+        b.setAttribute("aria-pressed", String(state.teamB === mode));
+        b.addEventListener("click", () => {
+          if (state.teamB === mode) return;
+          state.teamB = mode; teamCard("b");
+          if (mode === "five") loadPreset("b", PRESETS[2]);
+          run();
+        });
+        seg.appendChild(b);
+      }
+      head.appendChild(seg);
+    }
+    root.appendChild(head);
+    if (isB && state.teamB === "average") {
+      const p = document.createElement("p"); p.className = "average-note";
+      p.textContent = "Team A plays the average of every 2025–26 lineup with 100+ possessions: its offense against their defenses, their offenses against its defense. To play one particular five instead, choose a five.";
+      root.appendChild(p);
+      return;
+    }
+    const hint = document.createElement("p"); hint.className = "team-hint";
+    hint.textContent = isB ? "Type over any name to build Team B (it starts as the 2016–17 Warriors), or load an example below."
+                           : "Type a player's name in any box and press Enter, or load an example below.";
+    root.appendChild(hint);
+    for (let i = 0; i < 5; i++) {
+      const slot = document.createElement("div"); slot.className = "slot"; slot.id = `slot-${side}-${i}`;
+      const n = document.createElement("span"); n.className = "n"; n.textContent = i + 1;
+      const input = document.createElement("input"); input.type = "text"; input.id = `name-${side}-${i}`;
+      input.setAttribute("list", "player-list"); input.setAttribute("aria-label", `Team ${side.toUpperCase()} player ${i + 1}`);
+      input.autocomplete = "off"; input.placeholder = "Type a player's name";
+      const sel = document.createElement("select"); sel.id = `season-${side}-${i}`; sel.setAttribute("aria-label", `Season for player ${i + 1}`);
+      input.addEventListener("input", () => commitSlot(side, i, true));      // a full name (or a pick from the list) applies at once
+      input.addEventListener("change", () => commitSlot(side, i, false));    // Enter or leaving the box: resolve what was typed
+      input.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape" && input.value !== (input.dataset.valid || "")) { input.value = input.dataset.valid || ""; commitSlot(side, i, false); }   // back to the last player
+      });
+      sel.addEventListener("change", () => { badges(side, i); run(); });
+      const msg = document.createElement("div"); msg.className = "slot-msg"; msg.id = `msg-${side}-${i}`; msg.setAttribute("aria-live", "polite");
+      const tags = document.createElement("div"); tags.className = "badges"; tags.id = `badges-${side}-${i}`;
+      const value = document.createElement("div"); value.className = "pvalue"; value.id = `pvalue-${side}-${i}`;
+      slot.append(n, input, sel, document.createElement("span"), msg, tags, value);
+      root.appendChild(slot);
+    }
+    const presets = document.createElement("div"); presets.className = "presets";
+    const examples = document.createElement("span"); examples.className = "presets-label"; examples.textContent = "Examples:";
+    presets.appendChild(examples);
+    for (const p of PRESETS) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "preset"; b.textContent = p.label;
+      b.title = `Put ${p.label} in Team ${side.toUpperCase()}`;
+      // a double-click's second click lands on whichever button the first one's redraw moved under the pointer
+      b.addEventListener("click", (ev) => { if (ev.detail > 1) return; loadPreset(side, p); run(); });
+      presets.appendChild(b);
+    }
+    root.appendChild(presets);
+  }
+  // A slot's player is the one last committed (input.dataset.pid), not the text being typed.
+  const slotPid = (side, i) => { const v = $(`name-${side}-${i}`)?.dataset.pid; return v ? Number(v) : undefined; };
+  function fillSeasons(side, i, season) {
+    const sel = $(`season-${side}-${i}`), pid = slotPid(side, i);
+    sel.innerHTML = "";
+    if (pid === undefined) return;
+    const seasons = directory.seasons.get(pid).slice().sort((a, b) => b.season - a.season);
+    for (const s of seasons) {
+      const o = document.createElement("option"); o.value = s.season;
+      o.textContent = `${s.season - 1}–${String(s.season).slice(2)}`;
+      sel.appendChild(o);
+    }
+    const want = season && seasons.some((s) => s.season === season) ? season : state.meta.defaults[String(pid)];
+    sel.value = String(want);
+  }
+  function slotMsg(side, i, html, hint) {
+    const m = $(`msg-${side}-${i}`);
+    if (!m) return;
+    m.innerHTML = html; m.classList.toggle("hint", Boolean(hint));
+  }
+  function setSlot(side, i, pid, season) {         // put a player in a slot, or empty it (pid undefined)
+    const input = $(`name-${side}-${i}`), slot = $(`slot-${side}-${i}`);
+    if (pid === undefined) delete input.dataset.pid;
+    else { input.dataset.pid = String(pid); input.value = directory.labelOf.get(pid); input.dataset.valid = input.value; }
+    input.dataset.applied = pid === undefined ? "" : input.value;
+    slot.classList.remove("pending", "bad");
+    slotMsg(side, i, "");
+    fillSeasons(side, i, season);
+    badges(side, i);
+  }
+  function commitSlot(side, i, typing) {            // typing: only a complete name applies; otherwise resolve or explain
+    const input = $(`name-${side}-${i}`), slot = $(`slot-${side}-${i}`), text = input.value, t = text.trim();
+    if (text === (input.dataset.applied || "") && !slot.classList.contains("bad") && (t || !typing)) {
+      slot.classList.remove("pending"); slotMsg(side, i, ""); run(); return;
+    }
+    const exact = exactPid(t);
+    if (exact !== undefined) { setSlot(side, i, exact, null); run(); return; }
+    if (typing) {
+      slot.classList.remove("bad"); slot.classList.add("pending");
+      slotMsg(side, i, t ? "Press Enter, or pick a name from the list." : "Type a player's name.", true);
+      run(); return;
+    }
+    const r = t ? resolveName(t) : { pid: undefined, matches: [] };
+    if (r.pid !== undefined) { setSlot(side, i, r.pid, null); run(); return; }
+    delete input.dataset.pid; input.dataset.applied = text;
+    fillSeasons(side, i, null); badges(side, i);
+    slot.classList.remove("pending"); slot.classList.add("bad");
+    const pick = (l) => `<button type="button" class="pick" data-side="${side}" data-i="${i}" data-pid="${directory.byLabel.get(l)}">${escapeHtml(l)}</button>`;
+    slotMsg(side, i, !t ? "Empty: type a player's name."
+      : r.matches.length ? `Which one? ${r.matches.slice(0, 6).map(pick).join("")}${r.matches.length > 6 ? ` <span>and ${r.matches.length - 6} more: type more of the name</span>` : ""}`
+      : r.close && r.close.length ? `No player matches “${escapeHtml(t)}”. Did you mean ${r.close.map(pick).join("")}`
+      : `No player matches “${escapeHtml(t)}”.`);
+    run();
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest && ev.target.closest("button.pick");
+    if (b) { setSlot(b.dataset.side, Number(b.dataset.i), Number(b.dataset.pid), null); run(); }
+  });
+  function loadPreset(side, preset) {
+    preset.names.forEach((name, i) => setSlot(side, i, pidByName(name), preset.season));
+  }
+  function slotRow(side, i) {
+    const pid = slotPid(side, i), sel = $(`season-${side}-${i}`), season = sel ? Number(sel.value) : 0;
+    if (pid === undefined || !season) return null;
+    const s = directory.seasons.get(pid).find((x) => x.season === season);
+    return s ? s.row : null;
+  }
+  // ---- player types (lineups.combinations) ------------------------------------------------------
+  const BADGES = { O_big: ["Big", ""], O_small: ["Small", ""], O_shooter: ["Shooter", "o"], O_nonshooter: ["Non-shooter", "o"],
+    O_passer: ["Passer", "o"], O_creator: ["Self-creator", "o"], O_slasher: ["Slasher", "o"], O_crasher: ["Offensive rebounder", "o"],
+    O_usage: ["High usage", "o"], D_rim: ["Shot-blocker", "d"], D_glass: ["Defensive rebounder", "d"] };
+  const BADGE_DEF = {   // lineups.combinations.TYPES: the top or bottom fifth of the season's players on one measure
+    O_big: "among the tallest fifth of the season's players", O_small: "among the shortest fifth of the season's players",
+    O_shooter: "among the fifth who take the most threes", O_nonshooter: "among the fifth who take the fewest threes",
+    O_passer: "among the fifth with the most assists", O_creator: "among the fifth whose baskets are most often unassisted",
+    O_slasher: "among the fifth who take the most shots at the rim", O_crasher: "among the fifth most likely to grab offensive rebounds",
+    O_usage: "among the fifth who use the most plays (shots, free throws and turnovers)",
+    D_rim: "among the fifth who block the most shots", D_glass: "among the fifth who grab the most defensive rebounds" };
+  const KM = () => state.meta.combinations;
+  const hasType = (row, t) => ((KM().flags[state.rule][row] >> KM().types.indexOf(t)) & 1) === 1;
+  function badges(side, i) {
+    const el = $(`badges-${side}-${i}`);
+    if (!el) return;
+    const row = slotRow(side, i);
+    el.innerHTML = row === null ? "" : Object.entries(BADGES).filter(([t]) => hasType(row, t))
+      .map(([t, [label, cls]]) => `<span class="badge ${cls}" title="${label}: ${BADGE_DEF[t]}">${label}</span>`).join("");
+    const v = $(`pvalue-${side}-${i}`);
+    if (v) v.innerHTML = row === null ? "" : valueLine(row);
+  }
+  // ---- player values: a straight-line approximation (scripts/player_values.py) ------------------
+  const VALUES = () => state.meta.values.rules[state.rule];
+  const VALUE_NOTE = "Overall quality is a straight-line summary of the model, before combination effects: a typical player is about 0, and adding up five players' numbers gives a rough estimate for a lineup. The model itself is not a straight line.";
+  function valueLine(row) {
+    const v = VALUES(), off = v.offense[row], def = v.defense[row], net = off - def;
+    return `<abbr title="${VALUE_NOTE}" tabindex="0">Overall quality</abbr>: net <strong class="${net >= 0 ? "up" : "down"}">${signed(net)}</strong> (offense ${signed(off)}, points allowed ${signed(def)}) <span class="approx">a straight-line estimate</span><button type="button" class="dig" data-row="${row}">Details</button>`;
+  }
+  // ---- player details: the capability library's estimates for one player-season ------------------
+  const ZONES = ["at the rim", "in the paint", "from mid-range", "from long mid-range", "from the corner three", "from above-break three"];
+  const ZONE_SHORT = ["Rim", "Paint", "Mid-range", "Long mid-range", "Corner 3", "Above-break 3"];
+  const COUNTS = ["shot attempts", "free-throw attempts", "turnovers"];
+  const SHEET = {
+    teammates: { title: "On his teammates", intro: "How the other four's events change while he is on the floor, after adjusting for every other player out there.",
+                 who: "Teammates'", good: [0, 0, -1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1] },
+    defense: { title: "When he defends", intro: "How the events of the five players he faces change while he is on defense.",
+               who: "Opponents'", good: [0, -1, 1, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1] },
+    own: { title: "His own game", intro: "His own events, compared with an average player in the same role, after adjusting for teammates and opponents.",
+           who: "His", good: [0, 0, -1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1] },
+  };
+  const ordinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
+  const seasonLabel = (s) => `${s - 1}–${String(s).slice(2)}`;
+  function estimateLabel(block, k) {
+    const who = SHEET[block].who;
+    if (k < 3) return `${who} ${COUNTS[k]}`;
+    if (k < 9) return `Share of ${block === "own" ? "his" : who.toLowerCase()} shots ${ZONES[k - 3]}`;
+    if (k < 15) return `${who} make rate ${ZONES[k - 9]}`;
+    return `${who} offensive rebounds`;
+  }
+  function readable(block, items) {
+    // values in the units people use: percent change for rates, percentage points for shares and make rates
+    const L = state.meta.explain.league, total = L.attempts.reduce((t, x) => t + x, 0);
+    const share = L.attempts.map((x) => x / total), make = L.makes.map((x, z) => x / L.attempts[z]);
+    const loc = items.slice(3, 9).map((e) => e.coef);
+    const shifted = share.map((x, z) => x * Math.exp(loc[z]));
+    const norm = shifted.reduce((t, x) => t + x, 0);
+    return items.map((e, k) => {
+      let value, err, unit;
+      if (k < 3 || k === 15) { value = 100 * (Math.exp(e.coef) - 1); err = 100 * (Math.exp(e.sd) - 1); unit = "%"; }
+      else if (k < 9) { const z = k - 3; value = 100 * (shifted[z] / norm - share[z]); err = 100 * share[z] * (1 - share[z]) * e.sd; unit = " pp"; }
+      else { const z = k - 9, q = make[z]; value = 100 * (1 / (1 + Math.exp(-(Math.log(q / (1 - q)) + e.coef))) - q); err = 100 * q * (1 - q) * e.sd; unit = " pp"; }
+      const z = e.sd > 0 ? e.coef / e.sd : 0, dir = SHEET[block].good[k] * Math.sign(e.coef);
+      return { k, label: estimateLabel(block, k), value, err, unit, z, tone: Math.abs(z) < 1.64 ? "" : dir > 0 ? "good" : dir < 0 ? "bad" : "",
+               percentile: e.percentile, among: e.among };
+    });
+  }
+  function rankText(e, season) {
+    if (e.percentile === null) return "";
+    const p = Math.round(e.percentile);
+    if (e.percentile >= 99) return `highest of ${e.among} in ${seasonLabel(season)}`;
+    if (e.percentile < 1) return `lowest of ${e.among} in ${seasonLabel(season)}`;
+    return `${ordinal(p)} percentile of ${e.among} in ${seasonLabel(season)}`;
+  }
+  const valueText = (e) => `${signed(e.value)}${e.unit} <span class="muted">±${fmt(e.err)}</span>`;
+  function drawSheet(row, profile) {
+    const cols = ["teammates", "defense", "own"].map((b) => {
+      const items = readable(b, profile.blocks[b]);
+      const clear = items.filter((e) => Math.abs(e.z) >= 1.64).sort((a, c) => Math.abs(c.z) - Math.abs(a.z)).slice(0, 5);
+      const list = clear.length ? `<ul>${clear.map((e) => `<li><span>${e.label}</span><span class="v ${e.tone}">${valueText(e)}</span><span class="q">${rankText(e, profile.season)}</span></li>`).join("")}</ul>`
+        : `<p class="none">No estimate is clearly away from zero.</p>`;
+      return { b, html: `<section class="est"><h3>${SHEET[b].title}</h3><p class="intro">${SHEET[b].intro}</p>${list}</section>`, items };
+    });
+    const table = `<div class="scroll"><table><thead><tr><th>Estimate</th>${cols.map((c) => `<th class="r">${SHEET[c.b].title}</th>`).join("")}</tr></thead><tbody>${
+      Array.from({ length: 16 }, (_, k) => `<tr><td>${k < 3 ? COUNTS[k][0].toUpperCase() + COUNTS[k].slice(1) : k < 9 ? "Shot share: " + ZONE_SHORT[k - 3] : k < 15 ? "Make rate: " + ZONE_SHORT[k - 9] : "Offensive rebounds"}</td>${
+        cols.map((c) => `<td class="r">${valueText(c.items[k])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+    $("sheet-content").innerHTML = `<div style="display:grid;gap:16px">
+      <div class="sheet-cols">${cols.map((c) => c.html).join("")}</div>
+      <details><summary>All 16 estimates in each block</summary>${table}</details>
+      <p class="note"><strong>pp</strong> means percentage points: +6.1 pp is 6.1 more out of every 100 shots (or makes). Counts and offensive rebounds are percent changes. Each estimate adjusts for the other nine players on the floor and uses every earlier possession, measured through the end of the season. ± is one standard error; an estimate is listed above only when it is at least 1.64 standard errors from zero. Percentiles are among that season's players with at least the median amount of data. The model reads these as inputs and learns how much weight to give each. <a href="model.html#library">How they are estimated</a>.</p>
+    </div>`;
+  }
+  let sheetSeq = 0;
+  function openSheet(row) {
+    const pid = state.meta.players.pid[row], season = state.meta.players.season[row];
+    $("sheet-title").textContent = state.meta.names[String(pid)] || "Player";
+    const poss = state.meta.players.offense_possessions[row];
+    $("sheet-sub").innerHTML = `${seasonLabel(season)} · ${Math.round(poss).toLocaleString()} offensive possessions · ${valueLine(row).replace(/<button[^>]*>Details<\/button>/, "")}`;
+    $("sheet-content").innerHTML = `<p class="note">Loading the estimates…</p>`;
+    $("sheet").showModal();
+    worker.postMessage({ id: `profile-${++sheetSeq}`, kind: "profile", row });
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest && ev.target.closest(".dig");
+    if (b && state.ready) openSheet(Number(b.dataset.row));
+  });
+  $("sheet-close").addEventListener("click", () => $("sheet").close());
+  $("sheet").addEventListener("click", (ev) => { if (ev.target === $("sheet")) $("sheet").close(); });
+
+  function straightLine(aRows, bRows) {
+    const v = VALUES(), [offLevel, defLevel] = v.level;
+    const total = (rows, k) => rows.reduce((t, r) => t + v[k][r], 0);
+    // the numbers as shown (one decimal), so the sentence's arithmetic matches what the reader adds up by hand
+    const one = (x) => Number(x.toFixed(1)), shown = (rows) => one(rows.reduce((t, r) => t + one(v.offense[r] - v.defense[r]), 0));
+    if (!bRows) {
+      const offense = offLevel + total(aRows, "offense"), defense = defLevel + total(aRows, "defense");
+      const start = one(offLevel - defLevel), sum = shown(aRows);
+      return { offense, defense, margin: offense - defense, start, sum, shown: one(start + sum) };
+    }
+    const a = offLevel + total(aRows, "offense") + total(bRows, "defense");
+    const b = offLevel + total(bRows, "offense") + total(aRows, "defense");
+    return { a_offense: a, b_offense: b, margin: a - b, sumA: shown(aRows), sumB: shown(bRows), shown: one(shown(aRows) - shown(bRows)) };
+  }
+  const SAVED = "lineup-lab-teams-v1";
+  function saveTeams() {
+    if (!state.meta || state.restoring) return;
+    try {
+      const team = (side) => [0, 1, 2, 3, 4].map((i) => { const pid = slotPid(side, i); return pid === undefined ? null : [pid, Number($(`season-${side}-${i}`).value)]; });
+      const a = team("a"), b = state.teamB === "five" ? team("b") : null;
+      if (a.includes(null) || (b && b.includes(null))) return;      // keep the last complete lineup
+      localStorage.setItem(SAVED, JSON.stringify({ rule: state.rule, teamB: state.teamB, a, b }));
+    } catch { /* storage unavailable: nothing is remembered */ }
+  }
+  function restoreTeams() {                        // the last lineup this browser built, if all its players are still here
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(SAVED) || "null"); } catch { return false; }
+    const ok = (t) => Array.isArray(t) && t.length === 5
+      && t.every((x) => Array.isArray(x) && (directory.seasons.get(x[0]) || []).some((y) => y.season === x[1]));
+    if (!s || !ok(s.a) || (s.teamB === "five" && !ok(s.b))) return false;
+    state.restoring = true;
+    state.rule = s.rule === "as_was" ? "as_was" : "relative";
+    $("rule-relative").setAttribute("aria-pressed", String(state.rule === "relative"));
+    $("rule-as-was").setAttribute("aria-pressed", String(state.rule === "as_was"));
+    state.teamB = s.teamB === "five" ? "five" : "average";
+    teamCard("b");
+    s.a.forEach(([pid, season], i) => setSlot("a", i, pid, season));
+    if (state.teamB === "five") s.b.forEach(([pid, season], i) => setSlot("b", i, pid, season));
+    state.restoring = false;
+    return true;
+  }
+  function allBadges() { for (const side of ["a", "b"]) for (let i = 0; i < 5; i++) badges(side, i); }
+  function readTeam(side) {
+    const rows = [];
+    for (let i = 0; i < 5; i++) {
+      const r = slotRow(side, i);
+      if (r === null) return null;
+      rows.push(r);
+    }
+    return rows;
+  }
+
+  // ---- drawing ----------------------------------------------------------------------------------
+  const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : "–");
+  const signed = (x, d = 1) => { const r = Number(x.toFixed(d)); return (r >= 0 ? "+" : "−") + Math.abs(r).toFixed(d); };
+  // The straight line, the full model before combination effects, the combination effects: three numbers that add up.
+  const modelSays = (base, line, combo, point, matchup) => {
+    const gap = base - line;
+    const why = Math.abs(gap) < 0.05 ? "" : Math.abs(gap) < 1 || matchup
+      ? " (overall quality is only a straight-line summary: in the full model, players' strengths overlap or fit together in ways a straight line can't show)"
+      : gap < 0 ? " (overall quality is only a straight-line summary: in the full model, strong players' strengths overlap, for example several scorers sharing one ball, so stacking them adds less)"
+      : " (overall quality is only a straight-line summary: in the full model, these players' strengths fit together better than a straight line assumes)";
+    return `The full model says ${signed(base)} before combination effects${why}; <strong>combination effects add ${signed(combo, 2)}</strong>, for the forecast of ${signed(point)}.`;
+  };
+  function rangeSvg(r, lo, hi, reference, armC, alone) {
+    const W = 600, H = 34, pad = 6, x = (v) => pad + (W - 2 * pad) * (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo);
+    const ticks = [];
+    const step = (hi - lo) > 30 ? 10 : 5;
+    for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) ticks.push(t);
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="80% range ${fmt(r.low)} to ${fmt(r.high)}">
+      ${ticks.map((t) => `<line x1="${x(t)}" x2="${x(t)}" y1="${H - 6}" y2="${H}" stroke="var(--line)" stroke-width="1"/>`).join("")}
+      <line x1="${pad}" x2="${W - pad}" y1="${H - 6}" y2="${H - 6}" stroke="var(--line)" stroke-width="1"/>
+      ${reference === null ? "" : `<line x1="${x(reference)}" x2="${x(reference)}" y1="2" y2="${H - 6}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 2"/>`}
+      <rect x="${x(r.low)}" y="9" width="${Math.max(x(r.high) - x(r.low), 2)}" height="12" rx="3" fill="var(--band)"/>
+      <rect x="${x(r.point) - 1.5}" y="4" width="3" height="22" fill="var(--ink)"/>
+      ${armC === undefined ? "" : `<circle cx="${x(armC)}" cy="15" r="4.5" fill="var(--accent)"/>`}
+      ${alone === undefined ? "" : `<circle cx="${x(alone)}" cy="15" r="4.5" fill="none" stroke="var(--ink)" stroke-width="1.6"/>`}
+    </svg>`;
+  }
+  function metric(label, r, lo, hi, reference, armC, net, alone) {
+    const cls = net ? (Math.abs(r.point) < 0.05 ? "" : r.point > 0 ? "pos" : "neg") : "";
+    const value = net ? signed(r.point) : fmt(r.point);
+    return `<div class="metric ${net ? "net" : ""}">
+      <span class="label">${label}</span><span class="value ${cls}">${value}</span>
+      <span></span>${rangeSvg(r, lo, hi, reference, armC, alone)}
+      <span class="range">80% range ${net ? signed(r.low) : fmt(r.low)} to ${net ? signed(r.high) : fmt(r.high)}</span>
+    </div>`;
+  }
+  // The model's reasons for a wide range, in plain words: [chip class, chip, sentence, short phrase for the callout].
+  const minus = (x) => x.replace(/^-/, "−");
+  const capFirst = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+  const trainedSeasons = () => `${seasonLabel(state.meta.band.first_training_season)} to ${seasonLabel(state.meta.latest_season)}`;
+  function plainReason(r) {
+    let m;
+    if ((m = r.match(/^(offense|defense) composition beyond every trained lineup/)))
+      return ["shape", "unusual lineup", `Its ${m[1]} is unlike any lineup in the seasons the model learned from (${trainedSeasons()}).`, `its ${m[1]} is unlike the lineups the model learned from`];
+    if (r.startsWith("no ball handler"))
+      return ["shape", "unusual lineup", "No ball handler: its best passer sets up fewer baskets than any real lineup's best passer.", "no ball handler"];
+    if (r.startsWith("no shooter"))
+      return ["shape", "unusual lineup", "No outside shooter: its best shooter tries fewer threes than any real lineup's best shooter.", "no outside shooter"];
+    if ((m = r.match(/^(\d+) non-spacing bigs, more than any trained lineup \((\d+)\)/)))
+      return ["shape", "unusual lineup", `${m[1]} bigs who don't shoot from outside; no real lineup had more than ${m[2]}.`, `${m[1]} bigs who don't shoot from outside`];
+    if ((m = r.match(/^(.*) repeats a player$/)))
+      return ["shape", "repeated player", `${capFirst(m[1])} has the same player more than once.`, "the same player more than once"];
+    if ((m = r.match(/^thin player data: (.+) played (\d+) offensive possessions in (\d+)$/)))
+      return ["", "little data", `Little data on ${m[1]}: ${Number(m[2]).toLocaleString()} offensive possessions in ${seasonLabel(Number(m[3]))}.`, null];
+    if ((m = r.match(/^cross-era: (.+?) uses ([\d, ]+) player-seasons/)))
+      return ["era", "other era", `${capFirst(m[1])} has players from ${m[2].split(", ").map((x) => seasonLabel(Number(x))).join(", ")}. The model learned from games in ${trainedSeasons()}; older players come in through their own seasons' numbers, and comparing across eras is less certain.`, null];
+    if ((m = r.match(/^assumption C, capacity defense, moves the margin ([+-]?\d+(?:\.\d+)?)/)))
+      return ["assume", "other view", `A stricter view of defense (only the two best rim protectors count, and each attacker is matched with one defender) would move the net ${minus(m[1])}. It is the orange dot, not the forecast: real big lineups defended better than it assumes.`, null];
+    if ((m = r.match(/^assumption N: the learned combinations move the (\w+) ([+-]?\d+(?:\.\d+)?)/)))
+      return ["assume", "learned effects", `The combination effects the model learned from real lineups move the net ${minus(m[2])}. They are not checked one by one.`, null];
+    if ((m = r.match(/^assumption K: .*?together: (.*)\. If they keep adding pair by pair, the (\w+) moves ([+-]?\d+(?:\.\d+)?)/)))
+      return ["assume", "more than measured", `More players of one type than games have measured together (${m[1]}). The measured effects stop at that size; if they kept growing, the net would move ${minus(m[3])}.`, null];
+    return ["", "other", capFirst(r), null];
+  }
+  function drawReasons(reasons) {
+    const ul = $("reasons"); ul.innerHTML = "";
+    if (!reasons.length) {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="chip">in range</span><span></span>`;
+      li.lastChild.textContent = `Every player is from the seasons the model learned from (${trainedSeasons()}), and the lineup looks like real lineups of those seasons. The range's width is the model's measured error on real lineups.`;
+      ul.appendChild(li); return;
+    }
+    for (const r of reasons) {
+      const li = document.createElement("li"); const [cls, text, sentence] = plainReason(r);
+      li.title = capFirst(r);                     // the model's own wording
+      const chip = document.createElement("span"); chip.className = "chip " + cls; chip.textContent = text;
+      const body = document.createElement("span"); body.textContent = sentence;
+      li.append(chip, body); ul.appendChild(li);
+    }
+  }
+  function drawAssumptions(b, layer, learned, keys) {
+    const t = $("assumptions"), arms = b.arms;
+    const head = `<tr><th>Version</th>${keys.map(([, label]) => `<th>${label}</th>`).join("")}</tr>`;
+    const row = (name, f) => `<tr><td>${name}</td>${keys.map(([k]) => `<td class="num">${k === "margin" ? signed(f(k)) : fmt(f(k))}</td>`).join("")}</tr>`;
+    t.innerHTML = `<thead>${head}</thead><tbody>${row("<strong>Forecast</strong>: model + combination effects", (k) => b[k].point)}`
+      + row("Without combination effects", (k) => arms.R[k])
+      + row(`Only the ${KM().effects.length} measured combinations`, (k) => arms.R[k] + layer.layer[k])
+      + row("Stricter defense view (orange dot)", (k) => arms.C[k] + layer.layer[k] + learned[k])
+      + row("Measured effects keep growing", (k) => arms.R[k] + layer.continued[k] + learned[k]) + `</tbody>`;
+  }
+  function channelsHtml(ch) {
+    const items = [["volume", "Shots per possession"], ["shot_mix", "Where shots come from"], ["conversion", "Making shots"], ["free_throws", "Free throws"]];
+    const total = items.reduce((s, [k]) => s + ch[k], 0);
+    const all = items.map(([k, l]) => [l, ch[k]]).concat([["Total, before combinations", total]]);
+    const span = Math.max(4, ...all.map(([, v]) => Math.abs(v))) * 1.1;
+    return `<div class="bars">${all.map(([l, v], i) => `<div class="bar-row${i === all.length - 1 ? " total" : ""}"><span>${l}</span>`
+      + `<span class="bar-track"><span class="bar ${v >= 0 ? "pos" : "neg"}" style="width:${(50 * Math.abs(v) / span).toFixed(1)}%"></span></span>`
+      + `<span class="bar-value">${signed(v)}</span></div>`).join("")}</div>`;
+  }
+  function teamTable(mine, ref, refLabel) {
+    const rows = [["Shot attempts", "fga", 1, 1], ["Free-throw attempts", "fta", 1, 1], ["Turnovers", "turnovers", 1, -1],
+      ["Offensive rebounds", "offensive_rebounds", 1, 1], ["Share of shots from three (%)", "three_share", 100, 0],
+      ["Share of shots at the rim (%)", "rim_share", 100, 0], ["Make % at the rim", "rim_fg", 100, 1], ["Make % on threes", "three_fg", 100, 1]];
+    const body = rows.map(([label, k, scale, good]) => {
+      const d = (mine[k] - ref[k]) * scale, cls = good === 0 || Math.abs(d) < .05 ? "" : (d * good > 0 ? "up" : "down");
+      return `<tr><td>${label}</td><td class="num">${fmt(mine[k] * scale)}</td><td class="num">${fmt(ref[k] * scale)}</td><td class="num ${cls}">${signed(d)}</td></tr>`;
+    }).join("");
+    return `<div class="scroll"><table><thead><tr><th>Per 100 possessions</th><th>This offense</th><th>${refLabel}</th><th>Difference</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+  function playersTable(players) {
+    const body = players.map((p) => {
+      const shift = 100 * (p.usage_share - p.usual_share);
+      const cls = Math.abs(shift) < .5 ? "" : shift > 0 ? "up" : "down";
+      return `<tr><td>${escapeHtml(p.player)} <span class="muted">${p.season - 1}–${String(p.season).slice(2)}</span></td>
+        <td class="num">${fmt(100 * p.usage_share)}%</td><td class="num">${fmt(100 * p.usual_share)}%</td><td class="num ${cls}">${signed(shift)}</td>
+        <td class="num">${fmt(p.points)}</td><td class="num">${fmt(p.threes)}</td><td class="num">${fmt(p.rim_attempts)}</td></tr>`;
+    }).join("");
+    return `<div class="scroll"><table><thead><tr><th>Player</th><th>Share of plays</th><th>Usual share</th><th>Change</th><th>Points</th><th>Threes tried</th><th>Shots at rim</th></tr></thead><tbody>${body}</tbody></table></div>
+      <p class="muted" style="font-size:.82rem">Share of plays: each player's share of the lineup's shots, trips to the free-throw line and turnovers. The usual share is what it would be if everyone kept his own habits; the change is how far this lineup pushes him from it. Points, threes tried and shots at the rim are per 100 team possessions.</p>`;
+  }
+  function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+  function breakdown(title, e, refKey, refLabel, creation) {
+    const parts = [`<div class="channels" style="display:grid;gap:8px"><p><strong>${title}</strong></p>${channelsHtml(e.channels)}</div>`,
+      teamTable(e.team, e[refKey], refLabel), playersTable(e.players)];
+    if (creation) {
+      const c = creation;
+      const verdict = c.supply >= 1.25 * c.demand ? "plenty" : c.supply >= c.demand ? "enough" : "not enough";
+      parts.push(`<p class="muted" style="font-size:.85rem">Passing: the lineup's scorers need about ${fmt(c.demand, 0)} assisted baskets per 100 possessions, and its passers usually supply about ${fmt(c.supply, 0)}: ${verdict}.</p>`);
+    }
+    return parts.join("");
+  }
+
+  // ---- combination effects ----------------------------------------------------------------------
+  const UNIT = { rim_share: "percentage points of shots at the rim", three_share: "percentage points of shots from three", tov: "turnovers per 100 possessions", fta: "free-throw attempts per 100 possessions" };
+  const TITLES = {   // plainer titles than the export's
+    "rim_share:D_bigxD_big": "Bigs on defense together: each extra big keeps fewer shots away from the rim",
+    "rim_share:D_rimxD_glass": "Shot-blockers beside defensive rebounders: they keep the same shots away from the rim",
+    "rim_share:D_bigxD_glass": "Bigs beside defensive rebounders: nothing beyond the bigs effect",   // the refresh export's title predates the joint fit
+  };
+  const titleOf = (e) => TITLES[e.id] || e.title;
+  const surname = (row) => { const n = state.meta.names[String(state.meta.players.pid[row])]; return n.split(" ").slice(-1)[0]; };
+  function pairNames(rows, a, b) {
+    const out = [];
+    for (let i = 0; i < 5; i++) for (let j = i + 1; j < 5; j++) {
+      const ri = rows[i], rj = rows[j];
+      if ((hasType(ri, a) && hasType(rj, b)) || (hasType(ri, b) && hasType(rj, a))) out.push(`${surname(ri)} + ${surname(rj)}`);
+    }
+    return out;
+  }
+  function curve(effect, rows) {
+    // a same-type effect as the count of that type goes 0..5, other types held at this lineup's counts
+    const K = KM(), [event] = effect.id.split(":"), e = K.layer.events[event];
+    const k = e.pairs.findIndex((p) => `${event}:${p[1]}x${p[2]}` === effect.id), [side, a] = e.pairs[k];
+    const names = side === "offense" ? K.offense : K.defense, max = K.layer.measured_max;
+    const counts = Object.fromEntries(names.map((t) => [t, rows.reduce((c, r) => c + (hasType(r, t) ? 1 : 0), 0)]));
+    const at = (n, cap) => {
+      const c = (t) => { const v = t === a ? n : counts[t]; return cap ? Math.min(v, max[t]) : v; };
+      let x = e.intercept[k];
+      e.types.forEach((t, j) => { if (t in counts) x += e.slopes[k][j] * c(t); });
+      return e.beta[k] * (c(a) * (c(a) - 1) / 2 - x);
+    };
+    return { held: [0, 1, 2, 3, 4, 5].map((n) => at(n, true)), continued: [0, 1, 2, 3, 4, 5].map((n) => at(n, false)),
+             n: counts[a], max: max[a], plural: K.plurals[a] };
+  }
+  function curveSvg(c, event) {
+    const W = 190, H = 64, padL = 8, padR = 8, top = 6, bottom = 16;
+    const visible = c.held.concat(c.continued.slice(0, Math.min(c.max + 2, 6)));
+    let lo = Math.min(0, ...visible), hi = Math.max(0, ...visible);
+    if (hi - lo < 0.5) { const m = (hi + lo) / 2; lo = m - 0.25; hi = m + 0.25; }
+    const x = (n) => padL + (W - padL - padR) * n / 5, y = (v) => top + (H - top - bottom) * (hi - Math.min(Math.max(v, lo), hi)) / (hi - lo);
+    const path = (vals, from, to) => vals.slice(from, to + 1).map((v, i) => `${i ? "L" : "M"}${x(from + i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    return `<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="Change in ${UNIT[event]} beyond adding up, by number of ${c.plural}">
+      <line x1="${padL}" x2="${W - padR}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-width="1"/>
+      <rect x="${x(c.max)}" y="${top}" width="${x(5) - x(c.max)}" height="${H - top - bottom}" fill="var(--chip)" opacity=".6"/>
+      <path d="${path(c.continued, c.max, 5)}" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="3 3"/>
+      <path d="${path(c.held, 0, 5)}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      ${c.held.map((v, n) => `<circle cx="${x(n)}" cy="${y(v)}" r="${n === c.n ? 4.5 : 2.2}" fill="${n === c.n ? "var(--ink)" : "var(--accent)"}"/>`).join("")}
+      ${[0, 1, 2, 3, 4, 5].map((n) => `<text x="${x(n)}" y="${H - 3}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--mono)">${n}</text>`).join("")}
+    </svg>`;
+  }
+  function effectRow(e, rows, perspective) {
+    // perspective: +1 when more points are good (an offense), -1 for points allowed
+    const K = KM(), info = K.effects.find((x) => x.id === e.id);
+    const good = e.points * perspective >= 0;
+    const who = e.side === "defense" && perspective === -1 ? "opponents: " : "";
+    const names = pairNames(rows, info.a, info.b);
+    const plural = (t) => K.plurals[t];
+    const whoLine = names.length
+      ? `${names.slice(0, 3).join(", ")}${names.length > 3 ? ", …" : ""}`
+      : (info.a === info.b ? `Fewer than two ${plural(info.a)}` : `No ${plural(info.a)} beside ${plural(info.b)}`);
+    const count = (t) => rows.reduce((c, r) => c + (hasType(r, t) ? 1 : 0), 0);
+    const overlap = rows.reduce((c, r) => c + (hasType(r, info.a) && hasType(r, info.b) ? 1 : 0), 0);
+    const full = info.a === info.b ? count(info.a) * (count(info.a) - 1) / 2 : count(info.a) * count(info.b) - overlap;
+    const held = full > e.pairs + 1e-9 ? ` (counted up to the most games have measured; ${fmt(full, 0)} in all)` : "";
+    const pairings = `${fmt(e.pairs, 0)} such pairing${Math.round(e.pairs) === 1 ? "" : "s"} here${held}; the model already expects ${fmt(e.expected, 1)} such pairings from the players alone, so only the difference counts`;
+    const rep = info.label === "held up across eras" ? ["ok", "also seen in 2007–13"] : info.label.includes("reverses") ? ["", "opposite in 2007–13"] : ["", "same direction in 2007–13"];
+    let curvePart = "";
+    if (info.a === info.b) {
+      const c = curve(e, rows);
+      curvePart = `<div class="curve-wrap">${curveSvg(c, e.event)}<span class="curve-note">How this changes with the number of ${c.plural}, other players unchanged. Shaded: more ${c.plural} than real games have had together (${c.max}); the dashed line shows the effect if it kept growing, which the forecast doesn't use.</span></div>`;
+    }
+    return `<div class="effect">
+      <span class="title">${escapeHtml(titleOf(e))}</span><span class="pts ${good ? "good" : "bad"}" title="Points per 100 possessions">${signed(e.points, 2)}</span>
+      <div class="detail">
+        <span class="who">${escapeHtml(whoLine)}</span>
+        <span class="row2"><span>${pairings} → ${who}${signed(e.change, 2)} ${UNIT[e.event]}</span>
+          <span class="chip ok">confirmed on 2022–26 games</span><span class="chip ${rep[0]}">${rep[1]}</span></span>
+        ${curvePart}
+      </div>
+    </div>`;
+  }
+  function effectList(effects, rows, perspective) {
+    const big = effects.filter((e) => Math.abs(e.points) >= 0.02), small = effects.filter((e) => Math.abs(e.points) < 0.02);
+    const rowsOf = (e) => (typeof rows === "function" ? rows(e) : rows);
+    let html = big.map((e) => effectRow(e, rowsOf(e), perspective)).join("");
+    if (!big.length) html += `<p class="muted" style="font-size:.88rem;padding:8px 0">No combination here moves the score by more than 0.02 points per 100.</p>`;
+    if (small.length) html += `<details class="more"><summary>${small.length} smaller effect${small.length === 1 ? "" : "s"} (under 0.02 each)</summary>${small.map((e) => effectRow(e, rowsOf(e), perspective)).join("")}</details>`;
+    return html;
+  }
+  function h1Note(n) {
+    return `<div class="note"><span class="chip test">being tested</span><span>Small guards and a rim anchor: ${n.label} has ${n.small} small defender${n.small > 1 ? "s" : ""} (6'3" or shorter) ${n.anchor ? "with" : "without"} a rim anchor (6'9" or taller, top-10% shot-blocker). In 2016–26 games, small defenders allowed about 0.7 fewer points per 100 each when an anchor was on the floor. Older games (2007–13) didn't show it, so it will be checked on 2026–27 games and is not counted in the forecast.</span></div>`;
+  }
+  function beyondNote(layer, label) {
+    if (!layer.beyond.length) return "";
+    const K = KM();
+    const past = layer.beyond.map((b) => `${b.count} ${K.plurals[b.type]} on ${b.side} (at most ${b.measured} measured together)`).join("; ");
+    return `<div class="note"><span class="chip assume">capped</span><span>More players of one type than games have measured together: ${escapeHtml(past)}. Those effects stop at their measured size. If they kept growing, the ${label} would move ${signed(layer.continued.margin - layer.layer.margin, 1)}; the range includes that.</span></div>`;
+  }
+  // The model's learned combinations: one row per column, beside the measured effects.
+  function learnedRow(points, events, perspective, title, who) {
+    const good = points * perspective >= 0;
+    const parts = ["rim_share", "three_share", "tov", "fta"].map((k) => `${signed(100 * events[k], 2)} ${UNIT[k]}`).join(", ");
+    return `<div class="effect">
+      <span class="title">${title}</span><span class="pts ${good ? "good" : "bad"}" title="Points per 100 possessions">${signed(points, 2)}</span>
+      <div class="detail">
+        <span class="row2"><span>${who}${parts}</span><span class="chip">learned from real lineups</span></span>
+      </div>
+    </div>`;
+  }
+  function drawCombos(result) {
+    const L = result.comb, N = result.learned, K = KM();
+    if (result.kind === "lineup") {
+      const rows = result.a;
+      $("combo-totals").innerHTML = [["Offense", L.layer.offense + N.offense, 1], ["Defense (allowed)", L.layer.defense + N.defense, -1],
+                                     ["Net", L.layer.margin + N.margin, 1]]
+        .map(([k, v, sign]) => `<div><span class="k">${k}</span><span class="v ${v * sign >= 0 ? "up" : "down"}">${signed(v, 2)}</span></div>`).join("");
+      $("combo-cols").innerHTML = `<div class="combo-col"><h3>Team A's offense</h3>${learnedRow(N.offense, N.events.offense, 1, "Every pairing of teammates, as the model learned it", "")}${effectList(L.effects.offense, rows, 1)}</div>
+        <div class="combo-col"><h3>Team A's defense <span style="text-transform:none;letter-spacing:0">(points allowed)</span></h3>${learnedRow(N.defense, N.events.defense, -1, "Every pairing of defenders, as the model learned it", "opponents: ")}${effectList(L.effects.defense, rows, -1)}</div>`;
+      $("combo-notes").innerHTML = beyondNote(L, "net") + L.notes.map(h1Note).join("");
+    } else {
+      $("combo-totals").innerHTML = [["A's offense", L.layer.a_offense + N.a_offense], ["B's offense", L.layer.b_offense + N.b_offense],
+                                     ["Net, A − B", L.layer.margin + N.margin]]
+        .map(([k, v]) => `<div><span class="k">${k}</span><span class="v ${v >= 0 ? "up" : "down"}">${signed(v, 2)}</span></div>`).join("");
+      const rowsFor = (attack, guard) => (e) => (e.side === "offense" ? attack : guard);
+      const title = "Every pairing on the floor, as the model learned it";
+      $("combo-cols").innerHTML = `<div class="combo-col"><h3>Team A's offense against B</h3>${learnedRow(N.a_offense, N.events.a_offense, 1, title, "")}${effectList(L.effects.a_offense, rowsFor(result.a, result.b), 1)}</div>
+        <div class="combo-col"><h3>Team B's offense against A</h3>${learnedRow(N.b_offense, N.events.b_offense, 1, title, "")}${effectList(L.effects.b_offense, rowsFor(result.b, result.a), 1)}</div>`;
+      $("combo-notes").innerHTML = beyondNote(L, "net") + L.notes.map(h1Note).join("");
+    }
+  }
+  function drawLibrary(meta) {
+    const K = meta.combinations, reversed = K.effects.filter((e) => e.label.includes("reverses")).length;
+    document.querySelectorAll(".n-measured").forEach((el) => { el.textContent = String(K.effects.length); });
+    const evidence = (x) => `${signed(x.coef, 2)} (±${fmt(x.se, 2)})`;
+    const rows = K.effects.map((e) => `<tr><td class="wrap">${escapeHtml(titleOf(e))}</td><td class="wrap" data-label="What changes">${UNIT[e.event]}${e.side === "defense" ? ", opponents" : ""}</td>
+      <td class="num" data-label="Per pairing, used">${evidence({ coef: e.beta, se: e.se })}</td><td class="num" data-label="≈ points per 100 per pairing">${signed(e.points_per_pairing, 2)}</td>
+      <td class="num" data-label="Held-out check 2022–26, seasons">${evidence(e.confirmation)}, ${e.confirmation.seasons}/5</td><td class="num" data-label="2007–13">${evidence(e.replication)}</td></tr>`).join("");
+    $("library-inner").innerHTML = `<p>A pairing is one player of the first type next to a different player of the second; a player who is both types counts in both roles. The neural model's value for a player already assumes the pairings he usually has, so an effect counts only pairings beyond that: what "the model already expects from the players alone" is the straight-line estimate from the lineup's type counts, which can dip below zero when a lineup has none of either type. A lineup with more of a pairing than that gets the effect, and one with fewer gets the reverse. The search covered 105 type pairings across points and seven events. Pairings were found on 2016–21 games and confirmed on 2022–26 games the search never saw: these ${K.effects.length} held up. Each was re-checked on 2007–13, shown in the last column; most point the same way there${reversed ? `, and ${reversed === 1 ? "one points" : `${reversed} point`} the other way` : ""}. None changes points by enough to see directly (the limit is about 0.5 per 100 per pairing), so their points come from accounting: shots moved to the rim or the arc at the offense's own make rates, turnovers at its points per possession, and free throws net of the shot they replace.</p>
+      <div class="scroll"><table><thead><tr><th class="wrap">Combination</th><th class="wrap">What changes</th><th>Per pairing, used (2022–26, fitted together)</th><th>≈ points per 100 per pairing*</th><th>Held-out check 2022–26 (alone), seasons</th><th>2007–13 (alone)</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="muted" style="font-size:.82rem">*At league-average rates; positive is more points for the offense. The "used" column is fitted on 2022–26 without the last two minutes of close games, with all 14 together. Pairings titled "nothing beyond …" held up alone but are carried by their neighbours once fitted together, and add little. Small guards beside a rim anchor is a separate, pre-registered test for 2026–27 and is not in the number.</p>`;
+  }
+
+  // ---- results -----------------------------------------------------------------------------
+  // The summary bar (phones): shown while the result card is off screen.
+  const miniShow = () => { $("mini").hidden = !state.shown || state.resultInView; };
+  function show(result) {
+    state.shown = true;
+    miniShow();
+    setStale(false);
+    drawNotes(result);
+    const m = result.band.margin;
+    $("mini-text").innerHTML = `${result.kind === "lineup" ? "Net" : "Net, A − B"} <strong>${signed(m.point)}</strong> (80% range ${signed(m.low)} to ${signed(m.high)})`;
+    $("mini").classList.remove("stale");
+    const league = state.meta.explain.league;
+    const leagueOffense = state.leagueOffense;
+    if (result.kind === "lineup") {
+      const b = result.band;
+      $("result-title").textContent = "Against a league-average lineup";
+      const L = result.comb.layer, N = result.learned;
+      $("metrics").innerHTML = metric("Offense", b.offense, 95, 135, leagueOffense, b.arms.C.offense + L.offense + N.offense, false, b.arms.R.offense)
+        + metric("Defense", b.defense, 95, 135, leagueOffense, b.arms.C.defense + L.defense + N.defense, false, b.arms.R.defense)
+        + metric("Net", b.margin, -25, 25, 0, b.arms.C.margin + L.margin + N.margin, true, b.arms.R.margin)
+        + `<p class="muted" style="font-size:.82rem">Defense is points allowed per 100, so lower is better. League average is ${fmt(leagueOffense)} on both ends.</p>`;
+      const S = straightLine(result.a);
+      $("adding").innerHTML = `<strong>Adding up the five overall qualities gives net ${signed(S.shown)}</strong>: five typical players (each about 0) would be net ${signed(S.start)} against this league-average lineup, which is the average lineup that played 100+ possessions together (better than most, because coaches keep good lineups on the floor), and these five add ${signed(S.sum)}. `
+        + modelSays(b.arms.R.margin, S.shown, L.margin + N.margin, b.margin.point);
+      drawReasons(b.reasons);
+      drawAssumptions(b, result.comb, result.learned, [["offense", "Offense"], ["defense", "Defense"], ["margin", "Net"]]);
+      $("breakdown-title").textContent = "How Team A's offense gets its points";
+      $("breakdowns").innerHTML = breakdown("Points per 100 possessions, compared with a league-average offense", result.explain, "league", "League average", result.explain.creation);
+    } else {
+      const b = result.band;
+      $("result-title").textContent = "Team A against Team B";
+      const L = result.comb.layer, N = result.learned;
+      $("metrics").innerHTML = metric("A's offense", b.a_offense, 95, 135, leagueOffense, b.arms.C.a_offense + L.a_offense + N.a_offense, false, b.arms.R.a_offense)
+        + metric("B's offense", b.b_offense, 95, 135, leagueOffense, b.arms.C.b_offense + L.b_offense + N.b_offense, false, b.arms.R.b_offense)
+        + metric("Net, A − B", b.margin, -30, 30, 0, b.arms.C.margin + L.margin + N.margin, true, b.arms.R.margin);
+      const S = straightLine(result.a, result.b);
+      $("adding").innerHTML = `<strong>Adding up overall qualities: Team A ${signed(S.sumA)}, Team B ${signed(S.sumB)}, so net ${signed(S.shown)} for Team A.</strong> `
+        + modelSays(b.arms.R.margin, S.shown, L.margin + N.margin, b.margin.point, true);
+      drawReasons(b.reasons);
+      drawAssumptions(b, result.comb, result.learned, [["a_offense", "A's offense"], ["b_offense", "B's offense"], ["margin", "Net"]]);
+      $("breakdown-title").textContent = "What each defense does to the other offense";
+      $("breakdowns").innerHTML = breakdown("Team A's offense against Team B, compared with a league-average defense", result.explainA, "average_defense", "Against an average defense")
+        + breakdown("Team B's offense against Team A, compared with a league-average defense", result.explainB, "average_defense", "Against an average defense");
+    }
+    drawCombos(result);
+  }
+  function setStatus(text, busy, warn) { const s = $("status"); s.textContent = text; s.classList.toggle("busy", Boolean(busy)); s.classList.toggle("warn", Boolean(warn)); }
+  // Numbers on screen always belong to the lineup in the boxes, or are greyed out (QA, 2026-10-18).
+  function setStale(on) {
+    for (const id of ["result", "combos", "below"]) $(id).classList.toggle("is-stale", on && state.shown);
+    if (on && state.shown) { $("mini").classList.add("stale"); $("mini-text").textContent = "Lineup incomplete: numbers out of date"; }
+  }
+  function slotProblem(side, i) {
+    const slot = $(`slot-${side}-${i}`), t = slot ? $(`name-${side}-${i}`).value.trim() : "";
+    if (!slot) return null;
+    const who = `Team ${side.toUpperCase()} player ${i + 1}`;
+    if (slot.classList.contains("pending")) return `${who}: press Enter or pick a name from the list`;
+    if (slotRow(side, i) !== null) return null;
+    if (!t) return `${who} is empty`;
+    return resolveName(t).matches.length > 1 ? `${who}: pick which “${t}” you mean` : `${who}: no player matches “${t}”`;
+  }
+  // Above the numbers: an unusual lineup, or one player-season on both teams.
+  function drawNotes(result) {
+    let short = [...new Set(result.band.reasons.map(plainReason).map((p) => p[3]).filter(Boolean))];
+    const unlike = short.filter((x) => / is unlike the lineups/.test(x));
+    if (unlike.length > 1) short = ["it is unlike the lineups the model learned from", ...short.filter((x) => !unlike.includes(x))];
+    const notes = [];
+    if (short.length) notes.push(`<p class="callout"><strong>Unusual lineup:</strong> ${short.join("; ")}. Nothing like it played in the seasons the model learned from (${trainedSeasons()}), so treat the number as a rough guess; the range is wider for that reason. <a href="#reasons-card">Why the range is this wide</a></p>`);
+    if (result.kind !== "lineup") {
+      const P = state.meta.players, both = result.a.filter((r) => result.b.includes(r));
+      const who = both.map((r) => `${escapeHtml(state.meta.names[String(P.pid[r])])} ${seasonLabel(P.season[r])}`);
+      if (both.length) notes.push(`<p class="callout">${who.length > 1 ? `${who.slice(0, -1).join(", ")} and ${who[who.length - 1]}` : who[0]} ${both.length > 1 ? "are" : "is"} on both teams.</p>`);
+    }
+    $("result-notes").innerHTML = notes.join("");
+  }
+
+  function run() {
+    pieceChanged();
+    saveTeams();
+    if (!state.ready) return;
+    const sides = state.teamB === "five" ? ["a", "b"] : ["a"];
+    const issues = sides.flatMap((side) => [0, 1, 2, 3, 4].map((i) => slotProblem(side, i))).filter(Boolean);
+    if (issues.length) {
+      setStale(true);
+      setStatus(`${issues.join(". ")}.${state.shown ? " Until then, the greyed numbers are for the last complete lineup." : ""}`, false, true);
+      return;
+    }
+    const a = readTeam("a"), b = state.teamB === "five" ? readTeam("b") : null;
+    const id = ++state.seq;
+    setStatus(state.warm ? "Computing" : "Computing (the first lineup takes a few seconds)", true);
+    worker.postMessage({ id, kind: b ? "matchup" : "lineup", a, b, rule: state.rule });
+  }
+
+  function setRule(rule) {
+    state.rule = rule;
+    $("rule-relative").setAttribute("aria-pressed", String(rule === "relative"));
+    $("rule-as-was").setAttribute("aria-pressed", String(rule === "as_was"));
+    state.warm = false;
+    allBadges();
+    run();
+  }
+  $("rule-relative").addEventListener("click", () => setRule("relative"));
+  $("rule-as-was").addEventListener("click", () => setRule("as_was"));
+
+  // ---- the missing piece: every candidate for one of Team A's spots (tool/README.md) --------------------
+  // Each candidate is ranked by a screen (a smaller copy of the model: one checkpoint per seed, ten panel
+  // lineups a side), shared between the model's worker and up to three light helpers. The screen's best then
+  // get the exact forecast on the model's worker, best first, until no unforecast candidate could reach the
+  // top ten: its screen score, moved by the screen's mean error so far plus its largest deviation and half a
+  // point, below the tenth exact forecast (on eight test cores this found every true top ten after 16 to 32
+  // exact forecasts). Then the range, one row at a time, sharing the capacity arm's work across the rows.
+  // The numbers are the ones the main result shows for that lineup.
+  const PIECE = { shown: 10, first: 12, most: 64, batch: 8, slack: 0.5 };
+  const piece = { seq: 0, pending: new Map(), helpers: [], ask: 0, core: null, rule: null, rows: [], open: 4,
+                  opponent: null, teamB: null };
+  const teamB = () => (state.teamB === "five" ? readTeam("b") : null);
+  function pieceHint() {
+    const v = $("piece-against").value, P = state.meta ? state.meta.panel : null;
+    const n = P ? `${P.defense.rows.length + P.offense.rows.length} real 2025–26 lineups (it attacks ${P.defense.rows.length} and defends against ${P.offense.rows.length})` : "hundreds of real lineups";
+    $("piece-hint").textContent = v === "average"
+      ? `A league-average lineup is the slower search: every candidate's lineup plays ${n}, and the search averages them.`
+      : teamB() ? "Each candidate's lineup plays Team B's five, on offense and on defense: one opponent, so this search is faster."
+      : state.teamB === "five" ? "Team B has an empty or unrecognized player: fix it to search against Team B."
+      : "Choose Team B's five first: under Team B, click Choose a five.";
+  }
+  const PIECE_KINDS = new Set(["screen", "forecast", "band"]);
+  function ask(w, msg) {
+    const id = `piece-${++piece.ask}`;
+    return new Promise((resolve, reject) => { piece.pending.set(id, [resolve, reject]); w.postMessage({ ...msg, id }); });
+  }
+  function pieceReply(m) {
+    const p = piece.pending.get(m.id);
+    if (!p) return;
+    piece.pending.delete(m.id);
+    if (m.error) p[1](new Error(m.error)); else p[0](m);
+  }
+  const took = (seconds) => (seconds < 1 ? `${Math.round(1000 * seconds)} ms` : `${seconds.toFixed(1)} s`);
+  function startHelpers(meta, weights, players) {
+    const n = Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 4) - 2));
+    const source = $("model-src").textContent + "\n" + WORKER_GLUE;
+    const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+    for (let k = 0; k < n; k++) {
+      const h = new Worker(url);
+      h.ready = false;
+      h.onmessage = (ev) => { if (ev.data.ready) { h.ready = true; return; } pieceReply(ev.data); };
+      h.onerror = () => { h.ready = false; };
+      const w = weights.slice(0), p = players.slice(0);
+      h.postMessage({ init: true, meta, weights: w, players: p, warm: "screen", rule: state.rule }, [w, p]);
+      piece.helpers.push(h);
+    }
+  }
+  function pieceSlots() {
+    const sel = $("piece-slot"), keep = sel.value;
+    sel.innerHTML = "";
+    for (let i = 0; i < 5; i++) {
+      const o = document.createElement("option"); o.value = String(i);
+      const pid = slotPid("a", i), name = pid === undefined ? "" : directory.labelOf.get(pid);
+      o.textContent = name ? `${i + 1}. ${name}` : `${i + 1}. (empty)`;
+      sel.appendChild(o);
+    }
+    sel.value = keep || "4";
+    pieceCapDefault();
+  }
+  // The optional limit on overall quality (Adam, 2026-10-18: realistic trade targets, not the league's best).
+  // It starts at the replaced player's overall quality (net, the linear approximation under the current rule)
+  // and follows him and the rule until the viewer types a number of their own.
+  const quality = (r) => { const v = VALUES(); return v.offense[r] - v.defense[r]; };
+  function pieceCapDefault() {
+    if (!state.meta) return;
+    const input = $("piece-cap"), r = slotRow("a", Number($("piece-slot").value)), key = `${r}|${state.rule}`;
+    if (input.dataset.for === key) return;
+    input.dataset.for = key;
+    if (r === null) { input.value = ""; delete input.dataset.exact; input.placeholder = "e.g. 2.0"; return; }
+    const q = quality(r);
+    input.value = q.toFixed(1);
+    input.dataset.exact = String(q);
+  }
+  function pieceCap() {                            // null: no limit; NaN: a limit without a number
+    if ($("piece-cap-on").value !== "most") return null;
+    const input = $("piece-cap");
+    if (input.validity && input.validity.badInput) return Infinity;      // e.g. 1e400: out of range, not empty
+    return "exact" in input.dataset ? Number(input.dataset.exact) : (input.value.trim() === "" ? NaN : Number(input.value));
+  }
+  function pieceCandidates(core, which, cap, current) {          // the replaced player-season is the "now" row
+    const P = state.meta.players, thin = state.meta.band.thin_possessions, taken = new Set(core.map((r) => P.pid[r]));
+    const rows = [];
+    if (which === "latest") P.season.forEach((s, r) => { if (s === state.meta.latest_season) rows.push(r); });
+    else for (const [p, s] of Object.entries(state.meta.defaults)) rows.push(directory.seasons.get(Number(p)).find((x) => x.season === s).row);
+    const keep = rows.filter((r) => !taken.has(P.pid[r]) && r !== current);
+    const ok = keep.filter((r) => P.offense_possessions[r] >= thin);
+    const under = cap === null ? ok : ok.filter((r) => quality(r) <= cap + 1e-9);
+    return { rows: under, thin: keep.length - ok.length, capped: ok.length - under.length };
+  }
+  const sides = () => (piece.opponent ? ["a_offense", "b_offense"] : ["offense", "defense"]);
+  function pieceRow(x, k, now) {
+    const P = state.meta.players, r = x.row, pid = P.pid[r];
+    const name = escapeHtml(state.meta.names[String(pid)]);
+    const band = x.band ? `${signed(x.band.low)} to ${signed(x.band.high)}` : `<span class="pending">…</span>`;
+    const vs = now ? `<td class="num">${x.current ? "" : signed(x.f.margin - now.f.margin)}</td>` : "";
+    const cls = x.current ? "now" : (piece.used === r ? "used" : "");
+    return `<tr class="${cls}"><td class="num">${x.current ? "" : k + 1}</td>
+      <td class="who">${name} <span class="s">${seasonLabel(P.season[r])}${x.current ? " · current" : ""}</span>${x.current ? "" : `<button type="button" class="use" data-row="${r}">Use</button>`}</td>
+      <td class="num net ${x.f.margin >= 0 ? "up" : "down"}">${signed(x.f.margin)}<span class="rng-inline">${band}</span></td><td class="num rng">${band}</td>
+      <td class="num od">${fmt(x.f[sides()[0]])}</td><td class="num od">${fmt(x.f[sides()[1]])}</td>
+      <td class="num">${signed(x.f.learned + x.f.combinations, 2)}</td>${vs}</tr>`;
+  }
+  function drawPiece() {
+    const t = $("piece-table"), now = piece.rows.find((x) => x.current);
+    const list = piece.rows.filter((x) => !x.current);
+    t.hidden = false;
+    const [net, off, def] = piece.opponent ? ["Net, A − B", "A's offense", "B's offense"] : ["Net", "Offense", "Defense"];
+    // Against Team B the margin's combinations are Team A's minus Team B's, and B's are in every row (Adam, 2026-10-18:
+    // against the 2017 Warriors every row read about -1). The two sides do not separate exactly: each team's pairings
+    // change how the other's possessions play out.
+    const combos = piece.opponent
+      ? `<th title="Both teams' combination effects, in the margin: Team A's minus Team B's. Team B's own are in every row, so compare rows, not signs; vs current gives each candidate's difference.">Combinations, both teams</th>`
+      : `<th title="Combination effects, in the net">Combinations</th>`;
+    t.innerHTML = `<thead><tr><th>#</th><th class="who">Player</th><th>${net}</th><th class="rng">80% range</th><th class="od">${off}</th><th class="od">${def}</th>
+      ${combos}${now ? "<th title=\"Each candidate's net minus the current player's\">vs current</th>" : ""}</tr></thead>
+      <tbody>${list.map((x, k) => pieceRow(x, k, now)).join("")}${now ? pieceRow(now, 0, now) : ""}</tbody>`;
+  }
+  async function findPiece() {
+    if (!state.ready) return;
+    const open = Number($("piece-slot").value), core = [];
+    for (let i = 0; i < 5; i++) {
+      if (i === open) continue;
+      const r = slotRow("a", i);
+      if (r === null) { $("piece-status").textContent = "Fill Team A's other four spots first."; piece.blocked = true; return; }
+      core.push(r);
+    }
+    const current = slotRow("a", open), which = $("piece-pool").value, rule = state.rule;
+    const opponent = $("piece-against").value === "b" ? teamB() : null;
+    const blocked = (text) => { $("piece-status").textContent = text; piece.blocked = true; if (piece.core) $("piece").classList.add("stale"); };
+    if ($("piece-against").value === "b" && !opponent) { pieceHint(); blocked(""); return; }
+    const cap = pieceCap();
+    if (Number.isNaN(cap)) { blocked("Enter the highest overall quality to include, or choose Any."); return; }
+    if (cap !== null && !(Math.abs(cap) <= 30)) { blocked("Enter an overall quality between −30 and +30, or choose Any."); return; }
+    const { rows: cands, thin, capped } = pieceCandidates(core, which, cap, current);
+    if (!cands.length) { blocked(`No candidates have an overall quality of ${signed(cap)} or lower.`); return; }
+    piece.blocked = false;
+    const id = ++piece.seq, t0 = performance.now();
+    Object.assign(piece, { core, rule, open, opponent, rows: [], used: null, currentRow: current });
+    $("piece").classList.remove("stale");
+    $("piece-table").parentElement.scrollLeft = 0;
+    $("piece-status").textContent = `Checking ${cands.length.toLocaleString()} players`;
+    $("piece-status").classList.add("busy");
+    // 1. screen, split across the model's worker and the ready helpers
+    const workers = [worker, ...piece.helpers.filter((h) => h.ready)];
+    const size = Math.ceil(cands.length / workers.length);
+    const parts = workers.map((w, k) => cands.slice(k * size, (k + 1) * size)).filter((c) => c.length);
+    const replies = await Promise.all(parts.map((c, k) => ask(workers[k], { kind: "screen", core, candidates: c, rule, opponent })));
+    if (id !== piece.seq) return;
+    const screen = new Map();
+    parts.forEach((c, k) => c.forEach((r, j) => screen.set(r, replies[k].scores[j])));
+    const order = cands.slice().sort((a, b) => screen.get(b) - screen.get(a));
+    // 2. exact forecasts, best screened first, until nothing left could reach the top ten
+    const exact = [];
+    let next = 0;
+    const at = (r) => [...core.slice(0, open), r, ...core.slice(open)];   // the five in Team A's order
+    const batch = (rows) => ask(worker, { kind: "forecast", fives: rows.map(at), rule, opponent });
+    if (current !== null) {
+      const m = await batch([current]);
+      if (id !== piece.seq) return;
+      piece.rows.push({ row: current, f: m.results[0], current: true });
+    }
+    const now = piece.rows.slice();
+    const draw = () => {                           // the exact top ten so far, then the current fifth
+      exact.sort((a, b) => b.f.margin - a.f.margin);
+      piece.rows = exact.slice(0, PIECE.shown).concat(now);
+      drawPiece();
+    };
+    let complete = false;
+    while (next < order.length && exact.length < PIECE.most) {
+      const rows = order.slice(next, next + PIECE.batch); next += rows.length;
+      const m = await batch(rows);
+      if (id !== piece.seq) return;
+      rows.forEach((r, j) => exact.push({ row: r, f: m.results[j], gap: m.results[j].margin - screen.get(r) }));
+      if (exact.length >= PIECE.shown) { draw(); $("piece-status").textContent = `Refining: ${exact.length} full forecasts`; }
+      if (next >= order.length) { complete = true; break; }
+      if (exact.length < PIECE.first) continue;
+      const tenth = exact.map((x) => x.f.margin).sort((a, b) => b - a)[PIECE.shown - 1];
+      const gaps = exact.map((x) => x.gap), mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+      const spread = Math.max(...gaps.map((g) => Math.abs(g - mean)));
+      if (screen.get(order[next]) + mean + spread + PIECE.slack < tenth) { complete = true; break; }
+    }
+    draw();
+    $("piece-note").hidden = false;
+    $("piece-note").textContent = `Against ${opponent ? "Team B's five" : "a league-average lineup"}: `
+      + `${cands.length.toLocaleString()} ${which === "latest" ? "2025–26 players" : "players"} checked with a quick version of the model`
+      + `${cap === null ? "" : ` with overall quality ${signed(cap)} or lower`}`
+      + `${thin || capped ? ` (${[thin ? `${thin.toLocaleString()} with under ${state.meta.band.thin_possessions} offensive possessions` : "",
+                               capped ? `${capped.toLocaleString()} above that quality` : ""].filter(Boolean).join(" and ")} left out)` : ""},`
+      + ` and the ${exact.length} most promising given the full forecast.`
+      + `${complete ? "" : ` The search stopped after ${PIECE.most} full forecasts; a candidate the quick check ranked lower could still belong in the top ten.`}`
+      + ` The best candidates are usually close and their ranges`
+      + ` overlap, so read this as a short list rather than a ranking.`
+      + (opponent
+        ? ` Combinations, both teams: the combination effects inside the margin, Team A's minus`
+          + ` Team B's. Team B's own are in every row, so compare rows, not signs${current !== null ? "; vs current gives each candidate's difference" : ""}.`
+        : ` Combinations: the combination effects inside the net.`);
+    // 3. ranges, one row at a time
+    for (const x of piece.rows) {
+      $("piece-status").textContent = "Adding the ranges";
+      const m = await ask(worker, { kind: "band", rows: at(x.row), rule, opponent, search: id });
+      if (id !== piece.seq) return;
+      x.band = m.band.margin;
+      drawPiece();
+    }
+    $("piece-status").textContent = `Done in ${took((performance.now() - t0) / 1000)}`;
+    $("piece-status").classList.remove("busy");
+  }
+  function usePiece(r) {
+    const P = state.meta.players, i = piece.open;
+    setSlot("a", i, P.pid[r], P.season[r]);
+    piece.used = r;
+    drawPiece();
+    pieceSlots();
+    run();
+  }
+  function pieceChanged() {                        // a team or the rule changed: is the list still for them?
+    pieceSlots();
+    if (piece.teamB !== state.teamB) { piece.teamB = state.teamB; $("piece-against").value = state.teamB === "five" ? "b" : "average"; }
+    pieceHint();
+    if (piece.blocked) { $("piece-status").textContent = ""; piece.blocked = false; }   // the message was about the old teams
+    if (!piece.core) return;
+    const b = piece.opponent ? teamB() : null;
+    const coreSame = state.rule === piece.rule && [0, 1, 2, 3, 4].filter((i) => i !== piece.open)
+      .every((i, k) => slotRow("a", i) === piece.core[k])
+      && (!piece.opponent || (b && b.every((r, k) => r === piece.opponent[k])));
+    const now = slotRow("a", piece.open), same = coreSame && now === piece.currentRow;
+    $("piece").classList.toggle("stale", !same);
+    if (!same) {
+      const P = state.meta.players, who = now === null ? "" : state.meta.names[String(P.pid[now])];
+      $("piece-status").innerHTML = coreSame && who ? `${escapeHtml(who)} is in spot ${piece.open + 1} now: <a href="#result">see the forecast</a>. Find again to compare the others with this lineup.`
+        : "The teams changed: find again.";
+      $("piece-status").classList.remove("busy"); piece.seq++;
+    }
+  }
+  $("piece-against").addEventListener("change", pieceHint);
+  $("piece-slot").addEventListener("change", pieceCapDefault);
+  $("piece-cap-on").addEventListener("change", () => { $("piece-cap").disabled = $("piece-cap-on").value !== "most"; });
+  $("piece-cap").addEventListener("input", () => { delete $("piece-cap").dataset.exact; });
+  $("piece-go").addEventListener("click", () => findPiece().catch((err) => {
+    $("piece-status").textContent = "The search stopped: " + (err && err.message || err);
+    $("piece-status").classList.remove("busy");
+  }));
+  $("piece-table").addEventListener("click", (ev) => {
+    const b = ev.target.closest(".use");
+    if (b && !$("piece").classList.contains("stale")) usePiece(Number(b.dataset.row));   // a stale list's rows are not for this lineup
+  });
+
+  // ---- worker -------------------------------------------------------------------------------
+  const WORKER_GLUE = `
+    let model = null;
+    self.onmessage = (ev) => {
+      const m = ev.data;
+      try {
+        if (m.init) {
+          model = LineupModel.create(m.meta, m.weights, m.players);
+          if (m.warm) model.search.warm(m.rule, m.warm);
+          self.postMessage({ ready: true }); return;
+        }
+        if (m.kind === "profile") { self.postMessage({ id: m.id, kind: "profile", row: m.row, profile: model.profile(m.row) }); return; }
+        if (m.kind === "screen") {
+          self.postMessage({ id: m.id, kind: m.kind, scores: model.search.screen(m.core, m.candidates, m.rule, null, m.opponent) }); return;
+        }
+        if (m.kind === "forecast") {
+          self.postMessage({ id: m.id, kind: m.kind, results: m.fives.map((rows) => model.search.forecast(rows, m.rule, m.opponent)) }); return;
+        }
+        if (m.kind === "band") {
+          model.search.memo(m.search);
+          self.postMessage({ id: m.id, kind: m.kind, band: { margin: model.search.band(m.rows, m.rule, m.opponent).margin } }); return;
+        }
+        model.search.memo(null);
+        const out = { id: m.id, kind: m.kind };
+        out.a = m.a; out.b = m.b;
+        if (m.kind === "lineup") {
+          out.explain = model.explain.lineup(m.a, m.rule);
+          out.comb = model.combinations.lineup(m.a, m.rule, out.explain.rates);
+          out.learned = model.learned.lineup(m.a, m.rule);
+          out.band = model.band.lineup(m.a, m.rule, out.comb, out.learned);
+        } else {
+          out.explainA = model.explain.against(m.a, m.b, m.rule); out.explainB = model.explain.against(m.b, m.a, m.rule);
+          out.comb = model.combinations.matchup(m.a, m.b, m.rule, out.explainA.rates, out.explainB.rates);
+          out.learned = model.learned.matchup(m.a, m.b, m.rule);
+          out.band = model.band.matchup(m.a, m.b, m.rule, out.comb, out.learned);
+        }
+        self.postMessage(out);
+      } catch (err) { self.postMessage({ id: m.id, kind: m.kind, error: String(err && err.message || err) }); }
+    };`;
+
+  async function start() {
+    try {
+      // The binaries ship as base64 text (artifacts serve text and media, not raw binary). The status counts the
+      // megabytes as they arrive (QA, 2026-10-18: on a slow phone connection the load takes minutes).
+      const total = SIZES ? Object.values(SIZES).reduce((t, x) => t + x, 0) : 0;
+      let loaded = 0, shownAt = 0, loading = false;
+      const progress = () => {
+        const now = performance.now();
+        if (now - shownAt < 250) return;
+        shownAt = now;
+        setStatus(`Loading the model: ${(loaded / 1e6).toFixed(1)}${total ? ` of ${(total / 1e6).toFixed(1)}` : ""} MB.`
+          + (loading ? " You can pick players meanwhile; the forecast appears when it has loaded." : ""), true);
+      };
+      const readAll = async (r) => {
+        if (!r.body || !r.body.getReader) return r.text();
+        const reader = r.body.getReader(), parts = [];
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          parts.push(value); loaded += value.length; progress();
+        }
+        const all = new Uint8Array(parts.reduce((t, x) => t + x.length, 0));
+        let at = 0; for (const x of parts) { all.set(x, at); at += x.length; }
+        return new TextDecoder().decode(all);
+      };
+      const get = async (name, kind) => {
+        const r = await fetch(name);
+        if (!r.ok) throw new Error(`could not load ${name} (${r.status})`);
+        if (kind === "json") return readAll(r);
+        const text = (await readAll(r)).trim(), bytes = atob(text), out = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) out[i] = bytes.charCodeAt(i);
+        return out.buffer;
+      };
+      const meta = JSON.parse(await get("meta.json", "json"));      // the players and the page first
+      state.meta = meta;
+      const native = 100 * meta.explain.league.points;
+      const seedCal = meta.seeds.map((s) => meta.calibration["R_s" + s]);
+      state.leagueOffense = seedCal.reduce((t, c) => t + meta.league + c.intercept + c.slope * (native - meta.league), 0) / seedCal.length;
+      buildDirectory(meta);
+      drawLibrary(meta);
+      teamCard("a"); teamCard("b");
+      if (!restoreTeams()) loadPreset("a", PRESETS[0]);
+      pieceSlots();
+      pieceChanged();
+      if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { state.resultInView = e.isIntersecting; miniShow(); }).observe($("result"));
+      loading = true; shownAt = 0; progress();
+      const [weights, players] = await Promise.all([get("weights.txt"), get("players.txt")]);
+      loading = false;
+      const source = $("model-src").textContent + "\n" + WORKER_GLUE;
+      worker = new Worker(URL.createObjectURL(new Blob([source], { type: "text/javascript" })));
+      worker.onmessage = (ev) => {
+        const m = ev.data;
+        if (m.ready) { state.ready = true; $("piece-go").disabled = false; $("piece-status").textContent = ""; run(); return; }
+        if (PIECE_KINDS.has(m.kind)) { pieceReply(m); return; }
+        if (m.kind === "profile") { if (m.error) $("sheet-content").innerHTML = `<p class="note">${escapeHtml(m.error)}</p>`; else drawSheet(m.row, m.profile); return; }
+        if (m.id !== state.seq) return;          // a newer request superseded this one
+        if (m.error) { setStatus("The model could not score this lineup: " + m.error, false); return; }
+        if (!piece.helpers.length) setTimeout(() => startHelpers(meta, helperWeights, helperPlayers), 0);
+        state.warm = true;
+        show(m);
+        setStatus("Updated", false);
+      };
+      worker.onerror = (e) => setStatus("The model stopped: " + e.message, false);
+      setStatus("Starting the model", true);
+      const helperWeights = weights.slice(0), helperPlayers = players.slice(0);   // the search's helpers start after the first result
+      worker.postMessage({ init: true, meta, weights, players }, [weights, players]);
+    } catch (err) {
+      setStatus("", false);
+      $("metrics").innerHTML = `<p class="error">${escapeHtml(String(err.message || err))}. The page needs meta.json, weights.txt and players.txt beside it.</p>`;
+    }
+  }
+  start();
+})();
+</script>

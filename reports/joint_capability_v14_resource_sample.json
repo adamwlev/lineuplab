@@ -1,0 +1,11 @@
+{
+  "date": "2026-09-15",
+  "process": "v14 prescribed pilot, PID 17649",
+  "measurement": "read-only ps -p 17649 -o pid=,etime=,time=,rss=,pcpu=",
+  "samples": [
+    {"wall_seconds": 1033, "cpu_seconds": 1033.51, "rss_kib": 606944, "percent_cpu": 100.0},
+    {"wall_seconds": 1420, "cpu_seconds": 1420.24, "rss_kib": 898960, "percent_cpu": 99.7}
+  ],
+  "interpretation": "Samples during fitting, not peak memory measurements. Approximately one CPU second per elapsed second; production reports may use substantially more memory.",
+  "environment": {"python": "3.13.9", "numpy": "2.3.4", "pandas": "2.3.3", "scipy": "1.16.3", "torch": "2.10.0"}
+}

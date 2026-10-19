@@ -1,0 +1,4 @@
+model,native_team_mse,delta_vs_BASE,equal_season_delta,equal_season_sem,seasons_favorable,outer_event_delta_vs_BASE,outer_event_sem,seasons_event_favorable
+BASE,2025.088122,0.0,0.0,0.0,0,0.0,0.0,0
+TEAM_01,2024.728703,-0.359419,-0.330695,0.440567,8,0.00005712,0.00001026,1
+TEAM_1,2024.541091,-0.547031,-0.513168,0.511750,6,0.00062919,0.00005358,0

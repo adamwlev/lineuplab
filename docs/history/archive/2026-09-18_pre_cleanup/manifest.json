@@ -1,0 +1,36 @@
+{
+  "snapshot_date": "2026-09-18",
+  "purpose": "Exact pre-cleanup working-tree snapshots, including existing uncommitted v16 planning updates.",
+  "research_commit": "e438a4a",
+  "files": {
+    "AGENTS.md": {
+      "sha256": "0f905ae529dfc31d86b03681fbd597639bd6d598611e4da9a1392b47e83efd13",
+      "lines": 87
+    },
+    "CLAUDE.md": {
+      "sha256": "63bc9d66fd3adeff18d9b1ec56374cff0fc4644d3928fbf3484f852c81d7d91e",
+      "lines": 1108
+    },
+    "SESSION_HANDOFF.md": {
+      "sha256": "10783acffca98ad6003159f5a2d83c3fa6f7a2b4aa2907880b0b6951c39bd2f4",
+      "lines": 2928
+    },
+    "JOINT_CAPABILITY_STATE.md": {
+      "sha256": "692b30f3892baad25d4023a38b6c18d589cb68ffeca5e2e02ff233c93a38b94b",
+      "lines": 316
+    },
+    "MODEL_RESEARCH_ROADMAP.md": {
+      "sha256": "4b5717d7ed1901aef3803c266d011b87840ef4f8a4f5c3173af5419c255efc19",
+      "lines": 716
+    },
+    "BACKLOG.md": {
+      "sha256": "b82931d0ea2ae8cdb614dd0b33abcc0b3eea2cd5d9f422ab72a4b2a42d391fc6",
+      "lines": 1917
+    },
+    "MODEL_SCORECARD.md": {
+      "sha256": "95f5ac6c439f0f177b7e82a30dc50df6c7234a174b0e9c9c7f869fade1319587",
+      "lines": 159
+    }
+  },
+  "v16_plan_sha256": "3a928a6ef4e65d5eb110346cb0c816afe501fecf7c44737ee9513eeeed904203"
+}

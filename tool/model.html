@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lineup Lab Model</title>
+<meta name="author" content="Adam Levin and Claude Code">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: the scorer's table's technical appendix. A contents rail beside one reading column; the stack is drawn as the
+   possession's path through the model, in order. Same tokens as the tool. */
+:root {
+  --paper: #f4f6f8; --panel: #ffffff; --ink: #15191f; --muted: #5a6472; --line: #d8dde4;
+  --accent: #b9531f; --accent-soft: #f4e2d7; --band: #a9bdd1; --band-strong: #5f7f9f; --chip: #eceff3;
+  --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101318; --panel: #171b21; --ink: #e8ebf0; --muted: #9aa3b0; --line: #2a3038;
+    --accent: #e0814b; --accent-soft: #3b261b; --band: #3d536a; --band-strong: #8fb0cf; --chip: #222831; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #101318; --panel: #171b21; --ink: #e8ebf0; --muted: #9aa3b0; --line: #2a3038;
+  --accent: #e0814b; --accent-soft: #3b261b; --band: #3d536a; --band-strong: #8fb0cf; --chip: #222831; color-scheme: dark;
+}
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+* { box-sizing: border-box; }
+html { scroll-padding-top: 16px; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15.5px/1.6 var(--body); }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 22px 64px; display: grid; gap: 26px; }
+header { display: grid; gap: 8px; }
+.back { font-size: .88rem; }
+h1, h2, h3 { font-family: var(--display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+h1 { font-size: 2.6rem; line-height: 1; font-weight: 700; }
+h2 { font-size: 1.65rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+p, li { max-width: 68ch; }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 1.02rem; }
+.layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: 34px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } nav.toc { position: static; } }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 2px; font-size: .88rem; }
+nav.toc span { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding-bottom: 4px; }
+nav.toc a { color: var(--ink); text-decoration: none; padding: 3px 0 3px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover { border-left-color: var(--accent); color: var(--accent); }
+main { display: grid; gap: 40px; min-width: 0; }
+section { display: grid; gap: 12px; min-width: 0; }
+ul, ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; }
+.num, code { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+code { font-size: .88em; background: var(--chip); padding: 0 4px; border-radius: 4px; }
+.note { font-size: .86rem; color: var(--muted); }
+/* the stack: the path a forecast takes, in order */
+ol.stack { list-style: none; padding: 0; gap: 0; counter-reset: layer; max-width: none; }
+ol.stack li { counter-increment: layer; display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: 0 14px; max-width: none; }
+ol.stack li::before { content: counter(layer); font: 600 1.3rem/1 var(--display); color: var(--accent); border: 2px solid var(--accent);
+  border-radius: 50%; width: 2.2rem; height: 2.2rem; display: grid; place-items: center; background: var(--panel); grid-row: 1 / 3; }
+ol.stack li > strong { font-family: var(--display); font-size: 1.2rem; font-weight: 600; letter-spacing: .01em; align-self: center; }
+ol.stack li > p { grid-column: 2; padding-bottom: 16px; color: var(--muted); font-size: .92rem; }
+ol.stack li:not(:last-child) { background: linear-gradient(var(--line), var(--line)) no-repeat 1.1rem 2.3rem / 2px calc(100% - 2.3rem); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; font-size: .88rem; min-width: 32rem; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.terms { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; font-size: .92rem; }
+.terms dt { font-weight: 600; }
+.terms dd { margin: 0; color: var(--muted); max-width: 62ch; }
+@media (max-width: 560px) { .terms { grid-template-columns: minmax(0, 1fr); } .terms dd { padding-bottom: 6px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="back" href="./">← Back to Lineup Lab</a>
+    <h1>How the model works</h1>
+    <p class="lede">Lineup Lab forecasts what one five-player lineup scores against another, in points per 100 possessions. Any player-season from 2001–02 to 2025–26 can go in any lineup. This page describes each piece, from the play-by-play to the range around the forecast.</p>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Contents">
+      <span>Contents</span>
+      <a href="#stack">The stack</a>
+      <a href="#data">Data</a>
+      <a href="#players">Describing a player</a>
+      <a href="#library">Capability estimates</a>
+      <a href="#network">The event network</a>
+      <a href="#calibration">Calibration</a>
+      <a href="#combinations">Combination effects</a>
+      <a href="#range">The range</a>
+      <a href="#quality">Overall quality</a>
+      <a href="#missing-piece">The missing piece</a>
+      <a href="#breakdowns">Breakdowns</a>
+      <a href="#accuracy">Accuracy</a>
+      <a href="#limits">What is not checked</a>
+      <a href="#about">About this site</a>
+    </nav>
+
+    <main>
+      <section id="stack">
+        <h2>The stack</h2>
+        <p>A forecast passes through these layers in order. Nothing in it identifies a player by name or id: each player-season is described only by what he did on the floor, so any player can sit in any lineup.</p>
+        <ol class="stack">
+          <li><strong>Possessions</strong><p>Every possession from 2001–02 to 2025–26, with the ten players on the floor and every event's players.</p></li>
+          <li><strong>Player states</strong><p>Each player's rates, role, rebounding and defense as of any date, built only from earlier games.</p></li>
+          <li><strong>Capability estimates</strong><p>Monthly regressions that separate a player's own events from his effect on teammates and on the players he defends.</p></li>
+          <li><strong>Event network</strong><p>A neural model that turns ten players into the expected events of one possession and the points they produce.</p></li>
+          <li><strong>Calibration</strong><p>Each fit is pulled toward the league average by the amount history says it overreaches.</p></li>
+          <li><strong>Combination effects</strong><p>Learned and measured adjustments for pairs of players who play differently together than apart.</p></li>
+          <li><strong>The range</strong><p>An 80% range built from real-lineup error, cross-era error and named alternative assumptions, with the reasons it is wide.</p></li>
+          <li><strong>In your browser</strong><p>The whole model runs in the page, with no server, in background workers. It matches the Python model in tests on 1,200 matchups.</p></li>
+        </ol>
+      </section>
+
+      <section id="data">
+        <h2>Data</h2>
+        <p>The source is the play-by-play of <a href="https://www.basketball-reference.com/">Basketball Reference</a> (Sports Reference LLC). A possession records who had the ball, how it ended, the points, the five players on each side and the text of every event, with each event's players identified by their Basketball Reference id. Teammates who print the same name, like Jalen and Jaylin Williams, are told apart.</p>
+        <p>In October 2026 the possession table was rebuilt from the original pages wherever the old scrape had gaps: games short of the official score, games with no possessions, and every game with two same-name players on the floor. Each rebuilt game matches the official score exactly once technical free throws are set aside. Training rows group possessions by game, offense five and defense five, with counts of every event: about 1.6 million rows.</p>
+      </section>
+
+      <section id="players">
+        <h2>Describing a player</h2>
+        <p>Each player has a state for any date, computed only from games before it. Counts decay with half-lives of 180 and 730 days, and thin samples are shrunk toward the population.</p>
+        <dl class="terms">
+          <dt>Offensive state</dt><dd>18 numbers: how often he takes shots, gets to the line and turns the ball over; where his shots come from across six zones (rim, paint, mid-range, long mid-range, corner three, above-break three); how often each zone goes in; free-throw percentage; how often he assists; how often his makes are assisted.</dd>
+          <dt>Role</dt><dd>Recent minus long-run usage, and the average of his past teammates, so the model knows the context his numbers came from.</dd>
+          <dt>Rebounding</dt><dd>His share of the offensive rebounds he could collect, with the evidence behind it.</dd>
+          <dt>Defense</dt><dd>19 descriptors: steals, blocks, defensive rebounds, fouls, and what opponents do with him on the floor.</dd>
+          <dt>Capability estimates</dt><dd>97 offensive and 49 defensive numbers from the capability library, described next.</dd>
+        </dl>
+        <p>The tool works with player-seasons: a player as he stood on the next season's opening night. By default each player-season is placed relative to its own league, so a 2004 center is compared with 2004 centers. "As they played" keeps his raw rates instead.</p>
+      </section>
+
+      <section id="library">
+        <h2>Capability estimates</h2>
+        <p>Raw rates mix a player's own skill with the teammates and opponents around him. The capability library separates them. Every month it fits regularized regressions on all earlier possessions, weighted toward recent ones, for four kinds of event: shot, free-throw and turnover rates; where shots come from; how often they go in; and who gets the offensive rebound. Each player's event in each possession is explained by three kinds of term: the player himself, his four teammates, and the five defenders.</p>
+        <div class="panel">
+          <p>So every player carries three blocks of 16 estimates, one per event type:</p>
+          <dl class="terms">
+            <dt>His own game</dt><dd>His events against an average player in the same spot, after adjusting for the other nine.</dd>
+            <dt>On his teammates</dt><dd>How the other four's events change while he is on the floor. A playmaker who cuts his teammates' turnovers, or a passer who lifts their three-point accuracy, shows up here.</dd>
+            <dt>When he defends</dt><dd>How the events of the five players he faces change while he is on defense, such as fewer shots at the rim or lower accuracy there.</dd>
+          </dl>
+          <p class="note">Each estimate comes with its standard error and the amount of evidence behind it. The penalty that controls how far estimates are shrunk is chosen once per season, on the previous quarter. Open <strong>Details</strong> under any player in the tool to see his estimates in readable units.</p>
+        </div>
+      </section>
+
+      <section id="network">
+        <h2>The event network</h2>
+        <p>The network takes an offense five and a defense five and returns the expected outcome of one possession, written out as a ledger of events: shot attempts by zone, makes, free throws, turnovers and offensive rebounds. Points come from adding up the ledger.</p>
+        <dl class="terms">
+          <dt>Offense</dt><dd>Each player's state is adjusted by his teammates (the average and spread of the other four) and by his role, then decoded into 15 numbers: how often he shoots, gets to the line and turns it over, where he shoots from, and how often he makes it. Small heads add the capability estimates: his own, and the average of his teammates' effect on teammates.</dd>
+          <dt>Defense</dt><dd>The reference model averages the five defenders' descriptors and capability estimates into one shift applied to all five attackers. The alternative, capacity defense, counts rim protection from the two best inside defenders and pairs each attacker with one defender. It appears only in the range.</dd>
+          <dt>The ledger</dt><dd>Opportunities share one budget per possession: shot attempts plus 0.44 free-throw attempts plus turnovers. There is one ball. Shots split across the six zones. Make rates fall when the lineup needs more assisted shots than it has passing, or when a player carries more than his usual load. Misses lead to rebounds, and offensive rebounds start the cycle again.</dd>
+          <dt>Training</dt><dd>The five seasons before each forecast (2021–22 to 2025–26 for this release), weighted toward recent games with a two-year half-life. Older seasons enter only through each player-season's measured habits. The loss averages the likelihood of four kinds of events and adds a quarter of the squared error in points. The offense is trained first, then the defense on top. The number of passes is chosen on the previous quarter, and the model is refit on the whole window. The forecast mixes the last five checkpoints of each of three independent fits.</dd>
+        </dl>
+        <p class="note">Every head is a small two-layer network that starts at zero, so a new part begins as no change and has to earn its effect.</p>
+      </section>
+
+      <section id="calibration">
+        <h2>Calibration</h2>
+        <p>Each fit's forecast is pulled toward the league average: league + intercept + slope × (forecast − league), with slopes near 0.80. The constants come from how the same model design, refitted on the rebuilt data, overreached on earlier seasons, 2015 to 2026, with only information available before each forecast.</p>
+      </section>
+
+      <section id="combinations">
+        <h2>Combination effects</h2>
+        <p>For typical lineups the network nearly adds up its players: five good players make a good lineup in proportion, and adding up overall qualities lands within a point or two of it. Combination effects are something separate: the pairings that play differently together than apart, beyond what adding up already assumes.</p>
+        <h3>Learned combinations</h3>
+        <p>A small module reads every pair of teammates and every pair of defenders through the same inputs the network reads, and changes the network's events: shot mix, makes, free throws and turnovers. It is trained on real lineups for a fixed number of passes with the network frozen, and its outputs are held inside the range real lineups reach, so clones and impossible lineups cannot push it further. Its average effect on the league's lineups in the last quarter before the season is removed, so it only moves a lineup relative to the league as it stands. The forecast uses it at half strength. On 24 quarters of 2016–21 games that no design choice had seen, refitted on the rebuilt data, this changed forward accuracy by +0.0006 r² (−0.0007 at full strength). On the earlier data the same check gave +0.0010.</p>
+        <h3>Measured combinations</h3>
+        <p>Player types are the top or bottom fifth of each season's players on one measure, such as big, small, shooter, non-shooter, passer, self-creator, slasher, offensive rebounder, shot-blocker or defensive rebounder. 105 type pairings were searched across eight outcomes in 2016–21, and checked on 2022–26 games the search never saw. On the rebuilt data twelve held up there, all in shot locations and free throws. (On the earlier data fourteen had: the three turnover pairings dropped out, and bigs beside defensive rebounders came in.) Each was then re-checked on 2007–13, and the tool shows the result: seven also held up there, four pointed the same way more weakly, and one pointed the other way. None was big enough to see directly in points; the detection limit is about 0.5 points per 100 per pairing.</p>
+        <p>Each effect is fitted on 2022–26, leaving out the last two minutes of close games, and counted only beyond what adding up already assumes. Points come from accounting at the offense's own rates. Most player types appear at most three together in real games; past that, the forecast holds each effect at its three-player value, and the range covers the alternative where effects keep adding pair by pair. The measured effects are fitted on top of the learned module, so neither counts the same thing twice. Turning them on changes forward accuracy on real 2022–26 lineups by +0.00001 r², which is nothing either way. Their purpose is to bend unusual lineups for a stated, measured reason.</p>
+      </section>
+
+      <section id="range">
+        <h2>The range</h2>
+        <p>The 80% range is the widest span covered by the forecast under each named assumption, plus model error on either side.</p>
+        <dl class="terms">
+          <dt>Model error</dt><dd>A five's long-run level (its rating with game-to-game luck removed) differs from the forecast with a standard deviation of about 3.2 points per 100 on each end and 4.4 on the net. This is measured on real 2016–2026 lineups from how well each lineup's two halves of games agree with each other beyond the forecast.</dd>
+          <dt>Other eras</dt><dd>For lineups with player-seasons from before its training window, the model ranks real lineups with about 86% of its in-era correlation under either setting, so the range widens by the share of the lineup from other eras.</dd>
+          <dt>Assumptions</dt><dd>A stricter view of defense (capacity defense: only the two best rim protectors count, and each attacker is matched with one defender); measured combination effects that keep growing past the counts real lineups reach; and the forecast without learned combinations. Their spread is shown as assumption-based.</dd>
+          <dt>Reasons</dt><dd>The tool says why a range is wide: a composition no real lineup comes close to, missing roles such as no ball handler, repeated players, thin data, cross-era use, or a large assumption effect.</dd>
+        </dl>
+        <p class="note">A lineup's long-run level is never observed directly, so the range can't be checked by counting how often game results land inside it: results over a few hundred possessions carry their own luck. Its width on real lineups comes from the split-half measurement above. Ranges for lineups nobody has played rest on the stated assumptions, not on games. Comparing levels across eras is a modeling choice: "relative to their league" removes league-wide trends, "as they played" keeps them.</p>
+      </section>
+
+      <section id="quality">
+        <h2>Overall quality</h2>
+        <p>Each player-season's overall quality is his share in the model's best straight-line fit: the network's ratings of tens of thousands of position-balanced lineups, fitted as a constant plus one number per player, separately for offense and points allowed. Net is the difference, and a typical 2025–26 player is about 0. The straight line also has a starting point: five typical players come out about 4 points per 100 below the tool's league-average lineup, which is the average lineup that played 100+ possessions together, and the result card shows that start so its arithmetic adds up. Adding up five players' qualities lands within about 1 point per 100 of the model for typical real lineups from any era, and within about 2 points for nine in ten. The model is not a straight line, so the estimate drifts further for unusual lineups such as clones, five bigs or no ball handler. That drift is separate from the combination effects.</p>
+      </section>
+
+      <section id="missing-piece">
+        <h2>The missing piece</h2>
+        <p>The search keeps four of Team A and tries every candidate in the fifth spot. Candidates are every 2025–26 player, or every player at his default season, leaving out player-seasons with under 500 offensive possessions. The opponent is either a league-average lineup or Team B's five, as in the main result.</p>
+        <p>An optional limit on overall quality narrows the candidates, for example to players a team could realistically trade for rather than the league's stars. It starts at the overall quality of the player being replaced, and any number can be typed in. Overall quality is the linear approximation shown under each player (net, per 100 possessions, under the current player-level setting), so the limit is approximate: the search still ranks the remaining candidates by the full forecast.</p>
+        <p>Against a league-average lineup, an exact forecast runs 15 networks against 561 real lineups, with and without the learned module. That is about 17,000 small calculations, roughly 10 ms in a browser. Against Team B's five it is about 60 of them, so that search is several times faster. Either way the search works in two steps.</p>
+        <ol>
+          <li>A screen scores every candidate with one network per seed. Against a league-average lineup it also uses only 10 lineups on each side.</li>
+          <li>The best screened candidates get the exact forecast, in screen order. This stops when no remaining candidate could reach the top ten: the screen's mean error so far, plus its largest deviation, plus half a point, still leaves the next candidate below the tenth exact forecast.</li>
+        </ol>
+        <p>On eight four-player cores from 2025–26, this found the exact top ten every time: after 16 to 32 exact forecasts against a league-average lineup, and 16 to 40 against two specific fives. The list shows only exact numbers. The forecast, its 80% range and the combination effects are what the main result shows for that lineup.</p>
+        <p>Against Team B's five, the combinations column is in the margin, so it holds both teams' effects: Team A's minus Team B's. Team B's own are part of every row. Against a five with strong pairings of its own, such as the 2017 Warriors, every row starts about a point lower. Compare the rows with each other, not with zero. The two sides can't be separated exactly, because each team's pairings change how the other team's possessions play out.</p>
+        <p class="note">The best candidates usually sit within a point or two of each other, inside each other's ranges. Read the list as a short list, not a verdict on who fits best.</p>
+      </section>
+
+      <section id="breakdowns">
+        <h2>Breakdowns</h2>
+        <p>Volume, shot mix, conversion and free throws add up to the gap from a league-average offense in the model's own numbers. They describe how the model gets to its forecast, not proven causes. "League average" means the 2025–26 lineups that played at least 100 possessions together, on offense and on defense.</p>
+      </section>
+
+      <section id="accuracy">
+        <h2>Accuracy</h2>
+        <p>Measured forward in time: each quarter of 2016–2026 forecast by a model trained only on games before it, scored on possession-weighted lineup outcomes over 44 quarters. r² is the share of the variation in lineup scoring that the forecast explains (one minus the weighted squared error over the total variance). Lineup results over a quarter-season carry a lot of luck, so even a perfect forecast would explain only part of it.</p>
+        <p>On the rebuilt data, the calibrated network alone scores r² 0.1594 over 44 quarters, and 0.0988 within each quarter (how well it ranks lineups against others in the same quarter). On the earlier data it scored 0.1615 (0.1012), and the release before that, which blended in a straight-line player model, 0.1630. Those used different game records, so the comparison is only rough. The changes below are measured on the populations named.</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>What</th><th class="r">Change in r²</th><th>Population</th></tr></thead>
+            <tbody>
+              <tr><td>Dropping the straight-line half of the earlier release</td><td class="r">−0.0015</td><td>Lineup quarters, 44 quarters, earlier data; the price of a model that is not linear in copies of a player</td></tr>
+              <tr><td>Learned combinations, half strength</td><td class="r">+0.0006</td><td>24 fresh quarters of 2016–21, rebuilt data</td></tr>
+              <tr><td>Measured combinations</td><td class="r">+0.00001</td><td>Real 2022–26 game-level lineup pairs, rebuilt data</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Refitted on the rebuilt data in October 2026, except the straight-line half, which was measured once on the earlier data.</p>
+      </section>
+
+      <section id="limits">
+        <h2>What is not checked</h2>
+        <ul>
+          <li>Ranges for lineups no team has played. They follow from named assumptions and cannot be checked against games.</li>
+          <li>Cross-era comparisons. Placing a 2004 player in today's league is a choice of reference, not a measurement.</li>
+          <li>About 1% of play-by-play events credit a player missing from the recorded five, usually around a substitution. Those events count for the team but not for the player.</li>
+          <li>55 old games whose pages could not be parsed keep the original scrape's possessions.</li>
+          <li>A separate forecast of the 2026–27 season was frozen before it began and is scored only after the games. It is not what the tool shows.</li>
+        </ul>
+      </section>
+
+      <section id="about">
+        <h2>About this site</h2>
+        <p>Made by Adam Levin and Claude Code. The code is open source under the MIT licence at <a href="https://github.com/adamwlev/lineuplab">github.com/adamwlev/lineuplab</a>, without the data; questions and bug reports are welcome as issues there.</p>
+        <p>Data: play-by-play from <a href="https://www.basketball-reference.com/">Basketball Reference</a> (Sports Reference LLC), 2001–02 through 2025–26, with the games that had problems (missing, short or mixed-up records) rebuilt from their game pages in October 2026.</p>
+        <p>Privacy: the whole model runs in your browser. Nothing you type is sent anywhere. The page loads its fonts from Google Fonts, and your browser remembers the last lineup you built so a reload keeps it; nothing else is stored.</p>
+      </section>
+    </main>
+  </div>
+</div>
+</body>
+</html>
