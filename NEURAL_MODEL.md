@@ -6,16 +6,19 @@ production predictions exactly. For results see
 [MODEL_SCORECARD.md](MODEL_SCORECARD.md). For the version-by-version
 history see [docs/history/NEURAL_MODEL_2026-10-09.md](docs/history/NEURAL_MODEL_2026-10-09.md).
 
-**What the tool runs** (2026-10-15). The release is this architecture with
-broadcast defense (arm R), fitted two-phase from scratch at origin 2027q1,
-three seeds of five checkpoints each, and calibrated per seed
-(`lineups/release.py`). On top of it come half of the centered learned pairwise
-module (`lineups/learned.py`) and the 14 measured combination effects
-(`lineups/combinations.py`). The range adds capacity defense (arm C) and two
-combination alternatives (`lineups/band.py`). Which fits and inputs the tool
-uses is set in `lineups/sources.py`: names (2026-10-14), or clean (retrained on
-the possession table rebuilt from the pages). The reader-facing description is
-[tool/model.html](tool/model.html).
+**What the tool runs** (v1, live at https://lineuplab.dev since 2026-10-19). The
+release is this architecture with broadcast defense (arm R), fitted two-phase
+from scratch at origin 2027q1 on the clean data (the possession table rebuilt
+from the pages, exact player ids), three seeds of five checkpoints each, and
+calibrated per seed on the same design's 2015–2026 history refitted on the clean
+data (`lineups/release.py`). It is not blended with additive_defense. On top of
+it come half of the centered learned pairwise module (`lineups/learned.py`) and
+the 12 measured combination effects (`lineups/combinations.py`). The range adds
+capacity defense (arm C) and two combination alternatives (`lineups/band.py`).
+Which fits and inputs the tool uses is set in `lineups/sources.py`: names
+(2026-10-14), clean (2026-10-16) or refresh (the default since 2026-10-19;
+[results](reports/refresh_results_2026_10_19.md)). The reader-facing description
+is [tool/model.html](tool/model.html).
 
 ## Inputs: dated player capabilities, no player IDs
 
@@ -83,11 +86,13 @@ conversion, recovery), each normalized by a shared reference, plus
 0.25 × point MSE pooled by game and offense five. The optimizer is Adam with
 lr 1e-3, weight decay 1e-4 and gradient clipping at 5. Row weights decay with
 a 730-day half-life. The reference starts each origin from a separately trained
-v14 offense (`EventModel.from_parent`); single-stage training from
-`EventModel.fresh` is being evaluated.
+v14 offense (`EventModel.from_parent`). The release and its refitted history
+instead train two-phase from `EventModel.fresh`.
 
-Forecasts are calibrated with a prior-only affine map and blended 50/50 with
-additive_defense ([lineups/evaluate.py](lineups/evaluate.py)).
+In the research benchmark, forecasts are calibrated with a prior-only affine
+map and blended 50/50 with additive_defense (the "half" view,
+[lineups/evaluate.py](lineups/evaluate.py)). The tool drops the blend
+(AGENTS.md, 2026-10-12).
 
 ## Known limitations
 

@@ -9,14 +9,15 @@ and it shows:
 - offense, defense and margin in points per 100 possessions: the network plus
   the combination effects, with the network-alone number beside it. The
   combination effects are the learned module at half strength
-  (`lineups/learned.py`, Adam 2026-10-14) plus the 14 measured effects
+  (`lineups/learned.py`, Adam 2026-10-14) plus the 12 measured effects (14 before
+  the refresh on the clean data, 2026-10-19)
   re-measured on top of it. The page shows them in one section (Adam's
   feedback: users don't care which kind an effect is), with the learned part
   as one row per column;
 - each player's types, and the combination effects the lineup triggers
   (pairings, what adding up implies, event change, points, evidence, and a
   curve for same-type effects);
-- a library of all 14 measured combinations;
+- a library of all 12 measured combinations;
 - an 80% range, with the reasons it widens;
 - the capacity-defense and combinations-keep-adding alternatives;
 - a breakdown of how the offense gets its points;
@@ -72,7 +73,8 @@ it. Its data section describes the possession table rebuilt from the pages, so
 it is published with the clean-data release.
 
 A private review copy is at https://claude.ai/artifact/WC4QmzeJshrnneQ4HXzk8G; republish to that URL.
-Replacing the legacy page needs Adam's approval.
+The public tool is https://lineuplab.dev (below). The legacy page (last section) is
+still up at its artifact link; retiring it is Adam's call.
 
 **The public site** (Adam approved v1 on 2026-10-19; the domain lineuplab.dev is his) is an assets-only
 Cloudflare Worker (`tool/wrangler.jsonc`). `build_lineups.py --site --out DIR` writes `index.html` as a
@@ -83,7 +85,9 @@ Compressed, the data files come to about 14 MB (a gzip estimate; check it on the
 
 Build and check. `lineups.sources.DATA` (or `LINEUPS_RELEASE`) picks the
 release: `names` is 2026-10-14's, `clean` is the one retrained on the rebuilt
-data (`scripts/release_clean.sh` runs all of this for it):
+data (`scripts/release_clean.sh` runs all of this for it), and `refresh`, the
+default since 2026-10-19, is `clean` with every number from the 2015–2026
+history refitted on the clean data (`scripts/refresh_downstream.sh`):
 
 ```bash
 PY=/Users/adam/miniconda3/envs/basketball25/bin/python
@@ -95,7 +99,8 @@ $PY -m unittest tests.test_tool_parity              # JS vs Python: 1,200 matchu
 
 The built pages and data are in the release's export directory
 (`lineups.sources.SOURCE["export"]`: `experiments/cache/release_export_2026_10_12/`
-for names, `paths.CLEAN/release_export/` for clean). To publish, the page goes
+for names, `paths.CLEAN/release_export/` for clean, `paths.CLEAN/release_export_refresh/`
+for refresh). For the review copy, the page goes
 up with `model.html`, `meta.json`, `weights.txt` and `players.txt` beside it.
 The two .txt files are base64 copies of the .bin files, because artifacts don't
 serve raw binary.

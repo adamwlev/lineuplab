@@ -90,3 +90,18 @@ copy is version 11. The model page now carries the refreshed numbers; nothing in
   (−0.0015), which stays labelled as earlier data.
 - The release fits' learned module, which keeps its 2026-10-16 training on the clean
   release fits.
+
+## Addendum, 2026-10-19 (evening): the ports, moved here from STATUS
+
+Before the refresh ran on the clean data, each producer was ported to read the active cache
+root. `lineups/history.py` serves the 2015–2026 history of that root: the v16 reference under
+the main cache, and the refits under the clean root. `paths.CLEAN_ROOT` picks the possession
+table. Each ported producer first reproduced its saved output under the main cache:
+
+- calibration to 2e-13;
+- the benchmark to 3e-13;
+- the network-vs-linear rows and the learned module exactly;
+- the band's constants to their rounding.
+
+The launch incident of 2026-10-16 (all 384 fits started at once, and the laptop rebooted) is in
+the [protocol](refresh_protocol_2026_10_16.md).

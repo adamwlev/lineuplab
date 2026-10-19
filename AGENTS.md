@@ -121,7 +121,8 @@ publishable around opening night would be welcome but is not required.
     top of the module, so nothing counts twice.
   - This amends the 2026-10-13 rule that only held-up effects enter the
     number. The module's learned structure enters at half strength, labeled
-    as learned. The layer's 14 effects remain the measured, explained ones.
+    as learned. The layer's 14 effects remain the measured, explained ones
+    (12 since the refresh on the clean data, 2026-10-19).
   - The network-alone number stays visible. The trade is printed in the
     scorecard.
 
@@ -137,7 +138,8 @@ publishable around opening night would be welcome but is not required.
     `nba.possessions` stays as the original scrape.
   - The release is retrained on the rebuilt data. Its calibration is carried
     from the frozen record until history is rerun, and that carry-over is
-    stated.
+    stated. (The history was rerun on the clean data and every tool number
+    refitted on 2026-10-19; nothing is carried now.)
 - **Targeted first** (2026-10-15): pages only for the games with problems
   (short, empty, same-name collisions), so the clean release reaches the
   tool by Saturday 2026-10-17. The remaining pages are a later step.
@@ -148,10 +150,19 @@ publishable around opening night would be welcome but is not required.
 ## Decisions of record (Adam, 2026-10-19)
 
 - **Publish v1** on its own domain with low-maintenance, cheap hosting. Adam
-  buys the domain and owns the hosting account.
+  buys the domain and owns the hosting account. Live at https://lineuplab.dev
+  since 2026-10-19, shared with friends first. The close-out
+  ([docs/CLOSEOUT.md](docs/CLOSEOUT.md)) is complete.
+- **After v1, research reopens** (Adam, 2026-10-15), directed by the review
+  in [reports/fable_review_101526.md](reports/fable_review_101526.md).
+- **Credit and permission:** every page credits Basketball Reference (Sports
+  Reference LLC) with a link, and a permission request was sent on
+  2026-10-19. The public code holds no data and no download scripts
+  (`scripts/publish_repo.sh`).
 - **Author:** "Adam Levin and Claude Code".
-- **Open source the project.** The licence, account and repository are
-  Adam's to choose; nothing is pushed without his go-ahead.
+- **Open source the project:** a new clean repository,
+  https://github.com/adamwlev/lineuplab, MIT licence, without the scrape
+  scripts. Pushes to it still need Adam's go-ahead.
 - **Deferred to v2:** actual results for real lineups.
 - **Kept for v1:** the five Goberts colour, and the "relative" setting's
   cross-era translation.

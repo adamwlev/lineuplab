@@ -1,6 +1,6 @@
 # Current model scorecard
 
-Updated **2026-10-14** with the learned combinations; **2026-10-13** with the combination layer; **2026-10-12** with the release forecast (below). Earlier tables: updated 2026-10-09 with the completed
+Updated **2026-10-19** with the refresh on the clean data (first section); **2026-10-14** with the learned combinations; **2026-10-13** with the combination layer; **2026-10-12** with the release forecast (below). Earlier tables: updated 2026-10-09 with the completed
 [v20 scientific review](reports/joint_capability_v20_scientific_review.md), alongside the
 [v19 scientific review](reports/joint_capability_v19_review.md),
 [v18 scientific review](reports/joint_capability_v18_codex_review.md),
@@ -37,8 +37,9 @@ not a like-for-like comparison.
 table rebuilt from the pages, with exact player ids
 ([release](reports/clean_release_2026_10_16.md),
 [findings](reports/rescrape_pilot_2026_10_14.md)). Every number below was
-measured with fits trained on the old data. The retrained release carries the
-old calibration and has not been re-scored. On 120 real 2025–26 fives its
+measured with fits trained on the old data. The retrained release carried the
+old calibration until the refresh of 2026-10-19 (first section), which
+re-scored it on the clean data. On 120 real 2025–26 fives its
 margins correlate 0.994 with the old release's (SD of the change 0.56 points
 per 100).
 

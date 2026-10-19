@@ -1,7 +1,11 @@
 # Close-out plan: from research to the tool
 
-Agreed with Adam on 2026-10-12. This is a living plan; STATUS.md says which
-step is current. Every step is within Claude's authority unless it is marked
+**Complete 2026-10-19:** v1 is live at https://lineuplab.dev
+([launch report](../reports/v1_launch_2026_10_19.md)). This plan is now a record;
+the v2 research follows [MODEL_RESEARCH_ROADMAP.md](../MODEL_RESEARCH_ROADMAP.md).
+
+Agreed with Adam on 2026-10-12. This was a living plan; STATUS.md said which
+step was current. Every step is within Claude's authority unless it is marked
 **Adam**.
 
 ## Decisions (Adam, 2026-10-12)
@@ -24,17 +28,17 @@ step is current. Every step is within Claude's authority unless it is marked
 | 3 Cross-era | Done ([report](../reports/cross_era_2026_10_12.md)) | The declared rule picks **as-was** inputs. Transport keeps 56–66% of in-era centered r². Levels across eras are not validated. Adam chose era-relative as the default, with as-was as a setting. |
 | 4 Band | Done in Python (`lineups/band.py`) | Arms R and C. τ is about 3.2 per side and 4.5 on the margin, plus cross-era variance, at 80%. The offense-side arm O failed its in-range test and was dropped ([report](../reports/creation_law_screen_2026_10_12.md)). |
 | 5 Explanations | Done in Python (`lineups/explain.py`) | Volume, shot mix, conversion and free-throw channels against the league-average offense; usage against usual share; creation demand against supply. |
-| 6 Export and page | Built, not published (`scripts/export_release.py`, `tool/lineup_model.js`, `tool/lineups.html`) | The JS matches Python on 1,200 matchups (both rules, both arms), ratings, bands, reason strings and breakdowns (`tests/test_tool_parity.py`). Checked in Chrome on desktop light and phone dark. Private review copy: https://claude.ai/artifact/WC4QmzeJshrnneQ4HXzk8G. |
+| 6 Export and page | Published 2026-10-19 at lineuplab.dev (`scripts/export_release.py`, `tool/lineup_model.js`, `tool/lineups.html`) | The JS matches Python on 1,200 matchups (both rules, both arms), ratings, bands, reason strings and breakdowns (`tests/test_tool_parity.py`). Checked in Chrome on desktop light and phone dark. Private review copy: https://claude.ai/artifact/WC4QmzeJshrnneQ4HXzk8G. |
 | 7 Documents | Done | Scorecard prints the release trade; tool README rewritten. |
 
 ## After the close-out (2026-10-13 to 2026-10-15)
 
 | Step | State | What it established |
 | --- | --- | --- |
-| Combination effects | Done (Adam, 2026-10-13 and 2026-10-14) | The forecast adds the 14 measured effects ([layer](../reports/combination_layer_results_2026_10_13.md)) and half of the centered learned module ([release](../reports/learned_module_release_2026_10_14.md)); the layer is re-measured on top of the module. |
+| Combination effects | Done (Adam, 2026-10-13 and 2026-10-14) | The forecast adds the 14 measured effects (12 since the refresh of 2026-10-19) ([layer](../reports/combination_layer_results_2026_10_13.md)) and half of the centered learned module ([release](../reports/learned_module_release_2026_10_14.md)); the layer is re-measured on top of the module. |
 | Overall quality | Done (`scripts/player_values.py`) | Each player-season's linear approximation strength, shown as such. |
-| Clean data | Running ([findings](../reports/rescrape_pilot_2026_10_14.md)) | Exact player ids from the re-scraped pages; `nba_pages.possessions`; the legacy chain, library, stores and release rebuilt on it (`scripts/after_download.sh`, `scripts/release_clean.sh`). Target: in the tool by 2026-10-17. |
-| Player details and model page | Built, published with the clean release (Adam, 2026-10-15) | `tool/lineups.html` Details sheet; `tool/model.html`. |
+| Clean data | Done 2026-10-16; every number refitted on it 2026-10-19 ([refresh](../reports/refresh_results_2026_10_19.md)) ([findings](../reports/rescrape_pilot_2026_10_14.md)) | Exact player ids from the re-scraped pages; `nba_pages.possessions`; the legacy chain, library, stores and release rebuilt on it (`scripts/after_download.sh`, `scripts/release_clean.sh`). Target: in the tool by 2026-10-17. |
+| Player details and model page | Published with v1 (Adam, 2026-10-15) | `tool/lineups.html` Details sheet; `tool/model.html`. |
 
 ## Steps
 

@@ -41,7 +41,7 @@ Three goals have equal standing:
 
 | Path | Contents |
 | --- | --- |
-| `lineups/` | The package. **Model:** `model` (reference, plus optional coverage, capacity-law defenses and the pairwise module), `features`, `train`, `evaluate`. **Release and tool:** `release`, `sources` (which data the tool shows), `players` (player-seasons), `band`, `explain`, `combinations` (measured layer), `learned` (learned module), `support` (out-of-support reasons), `coherence`, `properties`. **Upstream builders:** `schedule`, `states`, `normalizers`, `additive`, `legacy` (readers for old artifacts). **Data:** `bref_pages` (Basketball Reference page parsers), `ingest` (the database updater that downloads the pages; not in the public repository), `page_possessions` (the possession table rebuilt from the pages), `pbp_ids` and `names` (exact player ids for the play-by-play text), `player_counts`, `data_version`, `db`, `paths` |
+| `lineups/` | The package. **Model:** `model` (reference, plus optional coverage, capacity-law defenses and the pairwise module), `features`, `train`, `evaluate`. **Release and tool:** `release`, `sources` (which data the tool shows), `players` (player-seasons), `band`, `explain`, `combinations` (measured layer), `learned` (learned module), `support` (out-of-support reasons), `coherence`, `properties`. **Upstream builders:** `schedule`, `states`, `normalizers`, `additive`, `history` (the 2015–2026 history of the active cache root), `legacy` (readers for old artifacts). **Data:** `bref_pages` (Basketball Reference page parsers), `ingest` (the database updater that downloads the pages; not in the public repository), `page_possessions` (the possession table rebuilt from the pages), `pbp_ids` and `names` (exact player ids for the play-by-play text), `player_counts`, `data_version`, `db`, `paths` |
 | `scripts/` | One-off runs and generators |
 | `tests/` | Unit and parity tests, plus small golden fixtures |
 | `experiments/cache/` | Local data, features and checkpoints. Untracked; this path is historical. |
@@ -63,6 +63,6 @@ Run code and tests from the repository root with the project interpreter:
 
 ```bash
 PY=/Users/adam/miniconda3/envs/basketball25/bin/python
-$PY -m unittest discover -s tests -t .        # about 90 s; parity tests need local caches
+$PY -m unittest discover -s tests -t .        # about 7 minutes on one core; parity tests need local caches
 $PY -u -m lineups.evaluate --arm J_POINT_BOTH  # re-score the reference from saved predictions
 ```
