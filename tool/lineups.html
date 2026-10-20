@@ -10,7 +10,7 @@
 :root {
   --paper: #f4f6f8; --panel: #ffffff; --ink: #15191f; --muted: #5a6472; --line: #d8dde4;
   --accent: #b9531f; --accent-soft: #f4e2d7; --band: #a9bdd1; --band-strong: #5f7f9f;
-  --good: #2c7a4b; --bad: #b0393a; --chip: #eceff3; --band-soft: #e3ebf3;
+  --good: #2c7a4b; --bad: #b0393a; --chip: #eceff3; --band-soft: #e3ebf3; --warn: #b7791f;
   --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -20,13 +20,13 @@
   :root:not([data-theme="light"]) {
     --paper: #101318; --panel: #171b21; --ink: #e8ebf0; --muted: #9aa3b0; --line: #2a3038;
     --accent: #e0814b; --accent-soft: #3b261b; --band: #3d536a; --band-strong: #8fb0cf;
-    --good: #5fb585; --bad: #e0716f; --chip: #222831; --band-soft: #1f2a36; color-scheme: dark;
+    --good: #5fb585; --bad: #e0716f; --chip: #222831; --band-soft: #1f2a36; --warn: #e3b341; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #101318; --panel: #171b21; --ink: #e8ebf0; --muted: #9aa3b0; --line: #2a3038;
   --accent: #e0814b; --accent-soft: #3b261b; --band: #3d536a; --band-strong: #8fb0cf;
-  --good: #5fb585; --bad: #e0716f; --chip: #222831; --band-soft: #1f2a36; color-scheme: dark;
+  --good: #5fb585; --bad: #e0716f; --chip: #222831; --band-soft: #1f2a36; --warn: #e3b341; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); }
@@ -38,55 +38,118 @@ h3 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: .06em; color:
 p { margin: 0; max-width: 68ch; }
 .muted { color: var(--muted); }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-header { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: end; justify-content: space-between; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+header { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: start; justify-content: space-between; }
 header .lede { color: var(--muted); max-width: 60ch; }
 .setting { display: grid; gap: 4px; }
 .setting label { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
 .segmented button { border: 0; background: transparent; color: var(--ink); font: 500 .9rem var(--body); padding: 7px 12px; cursor: pointer; }
 .segmented button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
-.segmented button:focus-visible, select:focus-visible, input:focus-visible, .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select:focus-visible, input:focus-visible, .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.segmented button:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 
 .table { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
-@media (max-width: 980px) { .table { grid-template-columns: minmax(0, 1fr); } .wrap { padding-bottom: 84px; } }
+/* The grid has no holes (designer QA 2026-10-19). Wide screens: three columns with Team B's five, and two with a league-average
+   Team B, as a slim card above the result. Laptops and tablets: Team A beside the result, Team B under Team A. */
+@media (min-width: 1200px) {
+  .table.avg { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); grid-template-areas: "a b" "a result"; }
+  .table.avg #team-a { grid-area: a; } .table.avg #team-b { grid-area: b; } .table.avg .result { grid-area: result; }
+}
+@media (min-width: 641px) and (max-width: 1199px) {
+  .table { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-areas: "a result" "b result"; }
+  #team-a { grid-area: a; } #team-b { grid-area: b; } .result { grid-area: result; }
+}
+@media (max-width: 640px) { .table { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1199px) { .wrap { padding-bottom: 96px; } }
 .team { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
 .team-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .team-head h2 span { color: var(--accent); }
-select, input[type="text"], input[type="number"] { font: 15px var(--body); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+select, input[type="text"], input[type="number"] { font: 15px var(--body); color: var(--ink); background-color: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+select { appearance: none; -webkit-appearance: none; padding-right: 26px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
 .slot { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto; gap: 4px 6px; align-items: center; }
-.slot select { min-width: 5.8rem; padding-inline: 6px; }
+.slot select { min-width: 6.6rem; padding-left: 8px; }
 .slot .n { font-family: var(--display); font-weight: 600; color: var(--muted); text-align: right; }
 .slot input { width: 100%; }
 .slot.bad input { border-color: var(--bad); }
 .presets { display: flex; flex-wrap: wrap; gap: 6px; }
 .preset { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 3px 10px; font: 500 .8rem var(--body); cursor: pointer; }
+.preset:active, .use:active { transform: translateY(1px); }
 .average-note { color: var(--muted); font-size: .92rem; }
 
 .result { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
-.result-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.result-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .status { font-size: .85rem; color: var(--muted); }
-.status.busy::before { content: ""; display: inline-block; width: .6em; height: .6em; border-radius: 50%; background: var(--accent); margin-right: .45em; animation: pulse 1s ease-in-out infinite; }
+.status.busy::before, .busy-dot { content: ""; display: inline-block; width: .6em; height: .6em; border-radius: 50%; background: var(--accent); margin-right: .45em; animation: pulse 1s ease-in-out infinite; }
+.busy-dot { width: 9px; height: 9px; margin: 0; flex: none; }
 @keyframes pulse { 50% { opacity: .25; } }
-@media (prefers-reduced-motion: reduce) { .status.busy::before { animation: none; } }
-.metric { display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); gap: 4px 12px; align-items: center; }
-.metric .label { font-size: .8rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
-.metric .value { font-family: var(--display); font-weight: 700; font-size: 2.3rem; line-height: 1; font-variant-numeric: tabular-nums; }
-.metric .range { grid-column: 2; font-size: .82rem; color: var(--muted); }
-.metric svg { width: 100%; height: 34px; display: block; }
+@media (prefers-reduced-motion: reduce) { .status.busy::before, .busy-dot { animation: none; } }
+/* The result's message line: always two lines tall, so nothing below it moves (designer QA 2026-10-19) */
+.result .status { margin-top: -8px; font-size: .82rem; line-height: 1.4; min-height: 2.8em; max-height: 2.8em; overflow: hidden;
+                  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.result .status.busy::before { content: none; }
+.result .status.warn { color: var(--ink); font-weight: 400; }
+.result .status.warn::before { content: ""; display: inline-block; width: .6em; height: .6em; border-radius: 50%; background: var(--warn); margin-right: .45em; }
+/* One block per number: the label and its 80% range on top, the number beside its range strip */
+#metrics { display: grid; gap: 18px; }
+.metric { display: grid; grid-template-columns: 6.4rem minmax(0, 1fr); grid-template-areas: "label range" "value strip"; gap: 4px 14px; align-items: end; }
+.metric .label { grid-area: label; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.metric .range { grid-area: range; justify-self: end; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.metric .value { grid-area: value; align-self: center; font-family: var(--display); font-weight: 700; font-size: 2.3rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.metric .strip { grid-area: strip; align-self: center; }
 .metric.net .value.pos { color: var(--good); }
 .metric.net .value.neg { color: var(--bad); }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .78rem; color: var(--muted); }
-.legend i { display: inline-block; width: 18px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.strip .track { position: relative; height: 34px; border-bottom: 1px solid var(--line); }
+.strip i { position: absolute; display: block; }
+.strip .tick { bottom: -1px; width: 1px; height: 5px; margin-left: -.5px; background: var(--line); }
+.strip .ref { top: 0; bottom: 0; width: 0; border-left: 1.5px dashed var(--muted); margin-left: -.75px; }
+/* the bar and the forecast tick on top; the two alternatives in a lane under them, a dot inside a ring where they meet */
+.strip .band { top: 4px; height: 12px; min-width: 2px; border-radius: 3px; background: var(--band); }
+.strip .point { top: 0; width: 3px; height: 20px; margin-left: -1.5px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1.5px var(--panel); }
+.strip .alone { top: 21px; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; border: 1.75px solid var(--ink); }
+.strip .armc { top: 23.5px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--accent); }
+.strip .ticks { position: relative; height: 15px; font: 10.5px/15px var(--mono); color: var(--muted); }
+.strip .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.strip .ticks span.l { transform: none; } .strip .ticks span.r { transform: translateX(-100%); }
+.metric.skeleton .value, .metric.skeleton .track { color: transparent; }
+.metric.skeleton .value::before { content: ""; display: block; width: 5rem; height: 1.8rem; border-radius: 4px; background: var(--chip); }
+.metric.skeleton .track { background: linear-gradient(var(--chip), var(--chip)) no-repeat center / 40% 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .76rem; color: var(--muted); margin-top: -6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { position: relative; display: inline-block; flex: none; }
+.legend .band { width: 16px; height: 9px; border-radius: 2px; background: var(--band); }
+.legend .point { width: 3px; height: 13px; background: var(--ink); }
+.legend .alone { width: 11px; height: 11px; border-radius: 50%; border: 1.75px solid var(--ink); }
+.legend .armc { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.legend .ref { width: 0; height: 13px; border-left: 1.5px dashed var(--muted); }
+/* How the net adds up: a short equation instead of a paragraph */
+.adding { display: grid; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.adding h3 { font-size: .95rem; }
+.sum { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 16px; font-size: .88rem; align-items: baseline; }
+.sum .v { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.sum .sub { grid-column: 1 / 3; font-size: .78rem; color: var(--muted); margin-top: -2px; }
+.sum .rule { grid-column: 1 / 3; border-top: 1px dashed var(--line); margin-block: 4px; }
+.sum .key { font-weight: 600; }
+.sum .rule.solid { border-top: 1px solid var(--ink); margin-block: 2px 0; }
+.sum .total { font-weight: 700; }
+.sum-note { font-size: .78rem; color: var(--muted); }
 
-.below { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 16px; }
-@media (max-width: 860px) { .below { grid-template-columns: minmax(0, 1fr); } }
+.below { display: grid; gap: 16px; }
+.why { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+.why h3 { font-size: .95rem; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; align-content: start; }
 .reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.reasons li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; }
+.reasons li { display: grid; gap: 4px; justify-items: start; font-size: .88rem; }
+.reasons li ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 3px; list-style: disc; }
+.reasons li ul li { display: list-item; font-size: inherit; }
 .chip { font: 600 .7rem var(--body); text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; background: var(--chip); color: var(--muted); white-space: nowrap; margin-top: 2px; }
 .chip.shape { background: var(--accent-soft); color: var(--accent); }
 .chip.era { background: var(--chip); color: var(--band-strong); }
-.chip.assume { background: var(--ink); color: var(--paper); }
+.chip.assume { background: var(--band-soft); color: var(--ink); }
 .scroll { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: .86rem; }
 th, td { padding: 5px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -95,7 +158,10 @@ th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color:
 td.num { font-family: var(--mono); }
 .up { color: var(--good); } .down { color: var(--bad); }
 .channels svg { width: 100%; display: block; }
-.breakdowns { display: grid; gap: 16px; }
+.breakdowns { display: grid; gap: 24px; }
+.bd { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 28px; align-items: start; }
+.bd > div { display: grid; gap: 12px; min-width: 0; }
+@media (max-width: 860px) { .bd { grid-template-columns: minmax(0, 1fr); } }
 footer { color: var(--muted); font-size: .85rem; display: grid; gap: 6px; }
 footer p { max-width: 100ch; }
 details.assume summary { cursor: pointer; font-size: .84rem; color: var(--muted); padding-block: 6px; }
@@ -107,19 +173,29 @@ details.assume summary:focus-visible { outline: 2px solid var(--accent); outline
 .badge { font: 500 .7rem/1.5 var(--body); padding: 0 6px; border-radius: 999px; background: var(--chip); color: var(--muted); white-space: nowrap; }
 .badge.o { background: var(--accent-soft); color: var(--accent); }
 .badge.d { background: var(--band-soft); color: var(--band-strong); }
-.pvalue { grid-column: 2 / 4; font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pvalue { grid-column: 2 / 4; display: flex; justify-content: space-between; align-items: center; gap: 2px 10px; font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pvalue strong { font-family: var(--mono); font-weight: 600; }
-.pvalue abbr { text-decoration: underline dotted; cursor: help; }
-.pvalue .approx { font-style: italic; }
-.dig { border: 0; background: none; color: var(--accent); font: 500 .78rem var(--body); padding: 0 0 0 6px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.nw { white-space: nowrap; }
+.pvalue abbr { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.dig { flex: none; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: 500 .74rem var(--body); padding: 1px 9px; border-radius: 999px; cursor: pointer; }
 .dig:focus-visible, .sheet-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-dialog.sheet { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); padding: 0; width: min(1000px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
-dialog.sheet::backdrop { background: rgba(10, 14, 20, .45); }
-.sheet-body { display: grid; gap: 16px; padding: 18px 20px 20px; }
-.sheet-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; justify-content: space-between; }
+dialog.sheet { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); padding: 0; width: min(1000px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; overscroll-behavior: contain; }
+dialog.sheet::backdrop { background: rgba(10, 14, 20, .6); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.sheet-body { display: grid; gap: 16px; padding: 0 20px 20px; }
+.sheet-head { position: sticky; top: 0; z-index: 1; display: flex; gap: 6px 16px; align-items: center; justify-content: space-between;
+              background: var(--panel); padding-block: 18px 12px; border-bottom: 1px solid var(--line); }
 .sheet-head h2 { font-size: 1.6rem; }
-.sheet-head .sub { color: var(--muted); font-size: .88rem; }
-.sheet-close { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 3px 12px; font: 500 .82rem var(--body); cursor: pointer; }
+.sheet-sub { color: var(--muted); font-size: .88rem; margin-top: -6px; }
+.sheet-close { flex: none; width: 36px; height: 36px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 50%; padding: 0; font: 400 1.35rem/1 var(--body); cursor: pointer; display: grid; place-items: center; }
+.sheet-key { font-size: .8rem; color: var(--muted); }
+.sheet-key .good { color: var(--good); font-weight: 600; } .sheet-key .bad { color: var(--bad); font-weight: 600; }
+.sheet-open .mini { display: none !important; }
+@media (max-width: 640px) {   /* phones: the details fill the screen, with the name and the close button always in view */
+  dialog.sheet { width: 100%; max-width: 100%; height: 100%; max-height: 100%; margin: 0; border: 0; border-radius: 0; }
+  .sheet-body { padding: 0 16px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .sheet-head { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+  .sheet-head h2 { font-size: 1.4rem; }
+}
 .sheet-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 @media (max-width: 860px) { .sheet-cols { grid-template-columns: minmax(0, 1fr); } }
 .est { display: grid; gap: 8px; align-content: start; min-width: 0; }
@@ -154,21 +230,22 @@ dialog.sheet::backdrop { background: rgba(10, 14, 20, .45); }
 .effect .pts { font-family: var(--mono); font-size: 1.05rem; text-align: right; white-space: nowrap; }
 .effect .detail { grid-column: 1 / 3; font-size: .86rem; color: var(--muted); display: grid; gap: 4px; }
 .effect .who { color: var(--ink); }
-.effect .row2 { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
-.effect svg.curve { width: 190px; height: 64px; display: block; flex: none; }
+.effect svg.curve { width: 240px; height: 82px; display: block; flex: none; }
+.effect .held { font-size: .78rem; color: var(--muted); }
+.effect .held b { color: var(--good); font-weight: 600; }
 .effect .curve-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .effect .curve-note { font-size: .78rem; max-width: 34ch; }
 .pts.good { color: var(--good); } .pts.bad { color: var(--bad); }
 .note { border-top: 1px solid var(--line); padding-top: 10px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; font-size: .88rem; }
-.chip.test { background: var(--accent); color: var(--paper); }
-.chip.ok { background: var(--chip); color: var(--good); }
+.chip.test { background: var(--accent-soft); color: var(--accent); }
 details.more summary { cursor: pointer; color: var(--muted); font-size: .88rem; padding: 6px 0; }
 details.library { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
 details.library > summary { cursor: pointer; font-family: var(--display); font-weight: 700; font-size: 1.2rem; }
 details.library .inner { display: grid; gap: 12px; padding-top: 12px; }
-td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
-.adding { font-size: .84rem; color: var(--muted); }
-.adding strong { color: var(--ink); font-weight: 600; }
+td.text, th.text { white-space: normal; text-align: left; min-width: 13rem; }
+#library th { white-space: normal; vertical-align: bottom; }
+#library td.text + td.text { min-width: 10rem; color: var(--muted); }
+#library td:last-child, #library th:last-child { padding-left: 18px; }
 
 /* The missing piece: every candidate for one of Team A's spots */
 .piece { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
@@ -185,28 +262,42 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
 .go:focus-visible, .use:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .piece table td.who, .piece table th.who { text-align: left; white-space: normal; min-width: 10rem; }
 .piece table td.who .s { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+.who-in { display: flex; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.who-in .use { flex: none; white-space: nowrap; }
+.piece thead th { vertical-align: bottom; }
+.piece th.cmb { white-space: normal; min-width: 6.5rem; }
+@media (min-width: 641px) { .piece table td.who { width: 46%; } }
+.piece table tr.used:hover td, .piece table tr.used td { background: var(--band-soft); }
 .piece table tr.now td { color: var(--muted); }
 .piece table tr.now td.who { font-style: italic; }
 .piece table tr.used td { background: var(--band-soft); }
 .piece .net { font-weight: 600; }
 .piece .pending { color: var(--muted); }
 .use { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 2px 10px; font: 500 .8rem var(--body); cursor: pointer; }
-.piece-note { font-size: .84rem; color: var(--muted); max-width: 90ch; }
+.piece-note { font-size: .84rem; color: var(--muted); max-width: 90ch; display: grid; gap: 6px; }
+details.how summary { cursor: pointer; width: max-content; max-width: 100%; }
+details.how summary:hover { color: var(--ink); }
+details.how p { padding-top: 4px; }
 .piece-hint { font-size: .84rem; color: var(--muted); }
 .piece-hint:empty { display: none; }
 .piece.stale table { opacity: .5; }
 .best table td.who { min-width: 16rem; }
-.best-summary { font-weight: 600; font-size: .92rem; }
+.best-summary { font-size: .92rem; }
+.best-summary strong { font-weight: 600; }
 .best-summary:empty { display: none; }
-.best table td.who .five { margin-right: 4px; }
 .use:disabled, .piece.stale .use { opacity: .4; cursor: default; pointer-events: none; }
 .slot.pending .dig { pointer-events: none; }
 .mini { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px;
-        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); font-size: .9rem; }
-.mini strong { font-family: var(--mono); }
-.mini.stale { color: var(--muted); }
-.mini a { color: var(--accent); white-space: nowrap; }
-@media (min-width: 981px) { .mini { display: none !important; } }
+        padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line);
+        box-shadow: 0 -4px 16px color-mix(in srgb, var(--ink) 8%, transparent); }
+.mini-text { display: grid; grid-template-columns: auto auto; justify-content: start; align-items: baseline; column-gap: 8px; min-width: 0; }
+.mini-text .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.mini-text strong { font: 700 1.45rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.mini-text strong.pos { color: var(--good); } .mini-text strong.neg { color: var(--bad); }
+.mini-text .r { grid-column: 1 / 3; font-size: .76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini.stale .mini-text { color: var(--muted); }
+.mini .mini-go { flex: none; background: var(--ink); color: var(--paper); border-radius: 6px; padding: 8px 14px; font: 600 .86rem var(--body); text-decoration: none; white-space: nowrap; }
+@media (min-width: 1200px) { .mini { display: none !important; } }
 /* tables that scroll sideways show a shadow at the hidden edge */
 .scroll { background: linear-gradient(to right, var(--panel) 30%, transparent) left / 28px 100% no-repeat local,
                       linear-gradient(to left, var(--panel) 30%, transparent) right / 28px 100% no-repeat local,
@@ -214,7 +305,6 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
                       radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 28%, transparent), transparent) right / 12px 100% no-repeat scroll; }
 .piece table th:first-child, .piece table td:first-child { position: sticky; left: 0; background: var(--panel); z-index: 1; min-width: 2.6rem; }
 .piece table th.who, .piece table td.who { position: sticky; left: 2.6rem; background: var(--panel); z-index: 1; }
-.piece table td.who .use { margin-left: 6px; }
 .note .chip { align-self: start; }
 .swipe { display: none; font-size: .84rem; color: var(--muted); }
 .breakdowns th { white-space: normal; vertical-align: bottom; }
@@ -246,38 +336,61 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
   .segmented button { min-height: 40px; }
   .use { padding: 6px 12px; min-height: 40px; }
   .go { min-height: 44px; }
-  .mini a { padding-block: 10px; }
   .dig { padding: 8px 6px 8px 10px; }
   select, input[type="text"], input[type="number"] { min-height: 40px; font-size: 16px; }
 }
 
+@media (hover: hover) {   /* hover states only where a pointer hovers (designer QA 2026-10-19: a tapped chip stayed lit on a phone) */
+  .segmented button[aria-pressed="false"]:hover { background: color-mix(in srgb, var(--panel), var(--ink) 7%); }
+  select:hover, input[type="text"]:hover, input[type="number"]:hover { border-color: color-mix(in srgb, var(--line), var(--ink) 25%); }
+  .preset:hover, .use:hover, .sheet-close:hover, .slot-msg button:hover { background: color-mix(in srgb, var(--chip), var(--ink) 9%); border-color: color-mix(in srgb, var(--line), var(--ink) 20%); }
+  .dig:hover { border-color: var(--accent); color: var(--accent); }
+  .piece tbody tr:not(.now):hover td { background: color-mix(in srgb, var(--panel), var(--ink) 3%); }
+  .jump a:hover { border-color: var(--accent); color: var(--accent); }
+}
 /* QA pass (2026-10-18): grid columns that can shrink, stale results, slot messages, the unusual-lineup callout */
 .card, .result, .team, .combos, .piece { grid-template-columns: minmax(0, 1fr); }
 details.assume { min-width: 0; }
 .sheet .note { display: block; border-top: 0; padding-top: 0; }
 .status.warn { color: var(--bad); font-weight: 600; }
-.is-stale #metrics, .is-stale #adding, .is-stale .legend, .is-stale #result-notes { opacity: .3; }
+.is-stale #metrics, .is-stale #adding, .is-stale .legend, .is-stale #result-notes, .is-stale #reasons-card { opacity: .3; }
 #combos.is-stale, #below.is-stale { opacity: .4; }
 .slot-msg { grid-column: 2 / 4; font-size: .8rem; color: var(--bad); display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
 .slot-msg.hint { color: var(--muted); }
 .slot-msg:empty { display: none; }
 .slot-msg button { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 1px 8px; font: 500 .78rem var(--body); cursor: pointer; }
 .slot.pending .badges, .slot.pending .pvalue { opacity: .35; }
+.slot.empty .badges, .slot.empty .pvalue { display: none; }
+.slot.pending:not(.empty) input { padding-right: 64px; background-repeat: no-repeat; background-position: right 8px center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='16'%3E%3Ctext x='56' y='12' text-anchor='end' font-family='-apple-system,Segoe UI,Helvetica,sans-serif' font-size='11' fill='%238a94a3'%3EEnter %E2%86%B5%3C/text%3E%3C/svg%3E"); }
 .team-hint { font-size: .82rem; color: var(--muted); }
 .team-row { margin-bottom: 4px; }
 .team-pick { max-width: 15rem; font-size: .9rem; padding-block: 4px; }
 .team-note { font-size: .78rem; color: var(--muted); align-self: center; }
-.jump { font-size: .9rem; color: var(--muted); }
+.jump { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: .88rem; color: var(--muted); }
+.jump a { color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 3px 12px; font-weight: 500; }
 .presets-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); align-self: center; }
-.rule-help { font-size: .76rem; color: var(--muted); max-width: 36ch; }
+.rule-help { font-size: .78rem; color: var(--muted); max-width: 40ch; }
+.rule-help summary { cursor: pointer; width: max-content; }
+.rule-help summary:hover { color: var(--ink); }
+header .setting { position: relative; }
+.rule-help p { position: absolute; z-index: 6; right: 0; top: calc(100% + 6px); width: min(36ch, calc(100vw - 32px)); padding: 10px 12px;
+               background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent); }
 #result-notes { display: grid; gap: 8px; }
 #result-notes:empty { display: none; }
 .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 8px 10px; border-radius: 4px; font-size: .88rem; max-width: none; }
 .callout a { color: inherit; }
 @media (max-width: 640px) {   /* phones: the search tables keep every column and scroll sideways, the rank and the names held in place (Adam, 2026-10-19) */
-  .piece table td.who .use { display: block; width: max-content; margin: 4px 0 0; white-space: nowrap; }
+  .who-in { flex-direction: column; align-items: flex-start; }
+  .piece table td.who { font-size: .84rem; }
+  .piece table th.who, .piece table td.who { box-shadow: inset -1px 0 0 var(--line); }
   .swipe:has(+ .scroll > table:not([hidden])) { display: block; }
-  .jump a { display: inline-block; padding-block: 9px; }
+  .jump a { padding: 7px 12px; }
+  .note, .reasons li { grid-template-columns: minmax(0, 1fr); }
+  .metric { grid-template-columns: 5.6rem minmax(0, 1fr); column-gap: 10px; }
+  .metric .value { font-size: 2.1rem; }
+  .piece-controls { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
+  .piece-controls select { max-width: none; width: 100%; }
 }
 </style>
 
@@ -285,8 +398,8 @@ details.assume { min-width: 0; }
   <header>
     <div style="display:grid;gap:6px">
       <h1>Lineup Lab</h1>
-      <p class="lede">Pick any five players, each as of one season between 2001–02 and 2025–26. The model adds up what each player brings, then applies <strong>combination effects</strong>: pairs of players who play differently together than apart. You get offense, defense and net (points scored minus points allowed), all per 100 possessions, with an 80% range for the lineup's long-run level (an 8-in-10 span). <a href="model.html">How the model works</a>.</p>
-      <p class="jump">Searches: <a href="#best">find a team's best five</a> · <a href="#piece">find the missing piece</a></p>
+      <p class="lede">Pick any five players from 2001–02 to 2025–26 and see how they would score and defend, per 100 possessions, with an 80% range. Beyond adding up the players, the model applies <strong>combination effects</strong>: pairs who play differently together than apart. <a href="model.html">How the model works</a></p>
+      <p class="jump"><a href="#best">Find the best five</a> <a href="#piece">Find the missing piece</a></p>
     </div>
     <div class="setting">
       <label id="rule-label">Player levels</label>
@@ -294,20 +407,78 @@ details.assume { min-width: 0; }
         <button id="rule-relative" type="button" aria-pressed="true" title="Each player is placed relative to the league he played in">Relative to their league</button>
         <button id="rule-as-was" type="button" aria-pressed="false" title="Each player keeps his raw rates in today's league">As they played</button>
       </div>
-      <p class="rule-help">For players from other seasons: rated against their own season's league, or with their raw numbers as they were. Relative translates an older player's habits into today's league (a 2016–17 shooter takes even more threes now), so older lineups can come out several points apart between the two. A lineup of 2025–26 players gets the same forecast either way.</p>
+      <details class="rule-help"><summary>How to rate players from other seasons</summary><p>Relative rates each player against his own season's league and translates his habits into today's (a 2016–17 shooter takes even more threes now); As they played keeps his raw numbers. Older lineups can come out several points apart between the two. A lineup of 2025–26 players gets the same forecast either way.</p></details>
     </div>
   </header>
 
   <section class="table">
     <div class="team" id="team-a"><p class="muted">Loading the player list…</p></div>
     <div class="result" id="result" aria-live="polite">
-      <div class="result-head"><h2 id="result-title">Against a league-average lineup</h2><span class="status busy" id="status">Loading the model</span></div>
-      <div id="metrics"></div>
+      <div class="result-head"><h2 id="result-title">Against a league-average lineup</h2><span class="busy-dot" id="busy" aria-hidden="true"></span></div>
+      <p class="status busy" id="status">Loading the model</p>
+      <div id="metrics">
+        <div class="metric skeleton"><span class="label">Offense</span><span class="value">0</span><div class="strip"><div class="track"></div><div class="ticks"></div></div></div>
+        <div class="metric skeleton"><span class="label">Defense</span><span class="value">0</span><div class="strip"><div class="track"></div><div class="ticks"></div></div></div>
+        <div class="metric skeleton"><span class="label">Net</span><span class="value">0</span><div class="strip"><div class="track"></div><div class="ticks"></div></div></div>
+      </div>
+      <div class="legend" id="legend" hidden><span title="The model's 8-in-10 span for the lineup's long-run level (its rating with game-to-game luck removed)"><i class="band"></i>80% range</span><span><i class="point"></i>forecast</span><span><i class="alone"></i>without combination effects</span><span><i class="armc"></i>stricter defense view</span><span><i class="ref"></i>league average</span></div>
       <div id="result-notes"></div>
-      <p class="adding" id="adding"></p>
-      <div class="legend"><span title="The model's 8-in-10 span for the lineup's long-run level (its rating with game-to-game luck removed)"><i style="background:var(--band)"></i>80% range</span><span><i style="background:var(--ink);width:3px"></i>forecast with combinations</span><span><i style="background:transparent;border:2px solid var(--ink);width:9px;height:9px;border-radius:50%"></i>without combination effects</span><span><i style="background:var(--accent);width:8px;height:8px;border-radius:50%"></i>stricter defense view</span><span><i style="background:var(--muted);width:2px;height:12px"></i>league average</span></div>
+      <div class="adding" id="adding" hidden></div>
+      <div class="why" id="reasons-card" hidden>
+        <h3>Why the range is this wide</h3>
+        <ul class="reasons" id="reasons"></ul>
+        <details class="assume"><summary>The forecast under each assumption</summary><div class="scroll"><table id="assumptions"></table></div></details>
+      </div>
     </div>
     <div class="team" id="team-b"><p class="muted">Loading the player list…</p></div>
+  </section>
+
+  <section class="combos" id="combos" aria-live="polite">
+    <div class="combo-head">
+      <div style="display:grid;gap:4px">
+        <h2>Combination effects</h2>
+        <p>Pairings that play differently together than apart, beyond what adding up players assumes: learned from every pairing in real lineups, and <span class="n-measured">12</span> also measured one by one in real games. Each is small, but together they bend the forecast, most of all for lineups nobody would play. <a href="model.html#combinations">How they work</a>.</p>
+      </div>
+      <div class="combo-totals" id="combo-totals"></div>
+    </div>
+    <div class="combo-cols" id="combo-cols"></div>
+    <div id="combo-notes"></div>
+  </section>
+
+  <details class="library" id="library">
+    <summary>All <span class="n-measured">12</span> measured combinations, and how they were found</summary>
+    <div class="inner" id="library-inner"></div>
+  </details>
+
+  <section class="below" id="below">
+    <div class="card">
+      <h3 id="breakdown-title">How the offense gets its points</h3>
+      <div class="breakdowns" id="breakdowns"></div>
+    </div>
+  </section>
+
+  <section class="piece best" id="best" aria-live="polite">
+    <div class="piece-head">
+      <div style="display:grid;gap:4px">
+        <h2>Find the best five</h2>
+        <p>Pick a team and a season, and the search tries every five from its roster against Team B's five (or a league-average lineup) to find the five that does best. The best get the full forecast, combination effects and range, beside the five the team played most that season (for 2026–27, its projected starters). <a href="model.html#best-five">How the search works</a>.</p>
+      </div>
+      <div class="piece-controls">
+        <div class="setting"><label for="best-season">Season</label><select id="best-season"></select></div>
+        <div class="setting"><label for="best-team">Team</label><select id="best-team"></select></div>
+        <div class="setting"><label for="best-against">Against</label><select id="best-against">
+          <option value="average">A league-average lineup</option>
+          <option value="b">Team B's five</option>
+        </select></div>
+        <button type="button" class="go" id="best-go" disabled>Find</button>
+      </div>
+    </div>
+    <p class="piece-hint" id="best-hint"></p>
+    <span class="status" id="best-status">The search starts once the model has loaded.</span>
+    <p class="best-summary" id="best-summary"></p>
+    <p class="swipe">Swipe the table sideways to see every column.</p>
+    <div class="scroll"><table id="best-table" hidden></table></div>
+    <div class="piece-note" id="best-note" hidden></div>
   </section>
 
   <section class="piece" id="piece" aria-live="polite">
@@ -340,63 +511,10 @@ details.assume { min-width: 0; }
     <span class="status" id="piece-status">The search starts once the model has loaded.</span>
     <p class="swipe">Swipe the table sideways to see every column.</p>
     <div class="scroll"><table id="piece-table" hidden></table></div>
-    <p class="piece-note" id="piece-note" hidden></p>
+    <div class="piece-note" id="piece-note" hidden></div>
   </section>
 
-  <section class="piece best" id="best" aria-live="polite">
-    <div class="piece-head">
-      <div style="display:grid;gap:4px">
-        <h2>Find the best five</h2>
-        <p>Pick a team and a season, and the search tries every five from its roster against Team B's five (or a league-average lineup) to find the five that does best. The best get the full forecast, combination effects and range, beside the five the team played most that season (for 2026–27, its projected starters). <a href="model.html#best-five">How the search works</a>.</p>
-      </div>
-      <div class="piece-controls">
-        <div class="setting"><label for="best-season">Season</label><select id="best-season"></select></div>
-        <div class="setting"><label for="best-team">Team</label><select id="best-team"></select></div>
-        <div class="setting"><label for="best-against">Against</label><select id="best-against">
-          <option value="average">A league-average lineup</option>
-          <option value="b">Team B's five</option>
-        </select></div>
-        <button type="button" class="go" id="best-go" disabled>Find</button>
-      </div>
-    </div>
-    <p class="piece-hint" id="best-hint"></p>
-    <span class="status" id="best-status">The search starts once the model has loaded.</span>
-    <p class="best-summary" id="best-summary"></p>
-    <p class="swipe">Swipe the table sideways to see every column.</p>
-    <div class="scroll"><table id="best-table" hidden></table></div>
-    <p class="piece-note" id="best-note" hidden></p>
-  </section>
-
-  <section class="combos" id="combos" aria-live="polite">
-    <div class="combo-head">
-      <div style="display:grid;gap:4px">
-        <h2>Combination effects</h2>
-        <p>Pairings that play differently together than apart, beyond what adding up players assumes: learned from every pairing in real lineups, and <span class="n-measured">12</span> also measured one by one in real games. Each is small, but together they bend the forecast, most of all for lineups nobody would play. <a href="model.html#combinations">How they work</a>.</p>
-      </div>
-      <div class="combo-totals" id="combo-totals"></div>
-    </div>
-    <div class="combo-cols" id="combo-cols"></div>
-    <div id="combo-notes"></div>
-  </section>
-
-  <details class="library" id="library">
-    <summary>All <span class="n-measured">12</span> measured combinations, and how they were found</summary>
-    <div class="inner" id="library-inner"></div>
-  </details>
-
-  <section class="below" id="below">
-    <div class="card" id="reasons-card">
-      <h3>Why the range is this wide</h3>
-      <ul class="reasons" id="reasons"></ul>
-      <details class="assume"><summary>The forecast under each assumption</summary><div class="scroll"><table id="assumptions"></table></div></details>
-    </div>
-    <div class="card">
-      <h3 id="breakdown-title">How the offense gets its points</h3>
-      <div class="breakdowns" id="breakdowns"></div>
-    </div>
-  </section>
-
-  <div class="mini" id="mini" hidden><span id="mini-text"></span><a href="#result">See the forecast</a></div>
+  <div class="mini" id="mini" hidden><div class="mini-text" id="mini-text"></div><a class="mini-go" href="#result">See the forecast</a></div>
 
   <footer>
     <p>The forecast is a neural model of every possession's events, calibrated on earlier seasons, plus learned and measured combination effects. It uses no player identity, only each player-season's measured habits, skills and height; a player-season (for example Curry 2025–26) is the player as measured through the end of that season. "League average" means the 2025–26 lineups that played at least 100 possessions. Overall quality and the breakdowns are approximations of the model, and ranges for lineups nobody has played rest on named assumptions. <a href="model.html">How the model works</a>, including the data, the player estimates, the range and the accuracy checks.</p>
@@ -408,9 +526,10 @@ details.assume { min-width: 0; }
 <dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
   <div class="sheet-body">
     <div class="sheet-head">
-      <div style="display:grid;gap:2px"><h2 id="sheet-title">Player</h2><span class="sub" id="sheet-sub"></span></div>
-      <button type="button" class="sheet-close" id="sheet-close">Close</button>
+      <h2 id="sheet-title">Player</h2>
+      <button type="button" class="sheet-close" id="sheet-close" aria-label="Close" title="Close">×</button>
     </div>
+    <p class="sheet-sub" id="sheet-sub"></p>
     <div id="sheet-content"></div>
   </div>
 </dialog>
@@ -510,6 +629,7 @@ details.assume { min-width: 0; }
   function teamCard(side) {
     const root = $("team-" + side);
     const isB = side === "b";
+    if (isB) document.querySelector(".table").classList.toggle("avg", state.teamB === "average");
     root.innerHTML = "";
     const head = document.createElement("div"); head.className = "team-head";
     const h = document.createElement("h2"); h.innerHTML = `Team <span>${side.toUpperCase()}</span>`;
@@ -534,7 +654,7 @@ details.assume { min-width: 0; }
     root.appendChild(head);
     if (isB && state.teamB === "average") {
       const p = document.createElement("p"); p.className = "average-note";
-      p.textContent = "Team A plays the average of every 2025–26 lineup with 100+ possessions: its offense against their defenses, their offenses against its defense. To play one particular five instead, choose a five.";
+      p.textContent = "Team A plays the average 2025–26 lineup that played 100+ possessions together. To face one particular five, choose a five.";
       root.appendChild(p);
       return;
     }
@@ -544,13 +664,13 @@ details.assume { min-width: 0; }
     root.appendChild(hint);
     if (ROSTERS) {
       const row = document.createElement("div"); row.className = "presets team-row";
-      const label = document.createElement("label"); label.className = "presets-label"; label.htmlFor = `pick-team-${side}`; label.textContent = "2026–27 team:";
+      const label = document.createElement("label"); label.className = "presets-label"; label.htmlFor = `pick-team-${side}`; label.textContent = "2026–27 team";
       const pick = document.createElement("select"); pick.id = `pick-team-${side}`; pick.className = "team-pick"; pick.title = ROSTER_NOTE;
       pick.append(new Option("Choose a team", ""));
       for (const t of ROSTERS.teams) pick.append(new Option(t.team, t.team));
       pick.addEventListener("change", () => { if (!pick.value) return; loadTeam(side, pick.value); run(); });   // it shows the team until a slot changes (syncPickers)
       const note = document.createElement("span"); note.className = "team-note"; note.title = ROSTER_NOTE;
-      note.textContent = "loads the starters projected for the first game of the season";
+      note.textContent = "Loads the starters projected for the first game of the season";
       row.append(label, pick, note);
       root.appendChild(row);
     }
@@ -574,7 +694,7 @@ details.assume { min-width: 0; }
       root.appendChild(slot);
     }
     const presets = document.createElement("div"); presets.className = "presets";
-    const examples = document.createElement("span"); examples.className = "presets-label"; examples.textContent = "Examples:";
+    const examples = document.createElement("span"); examples.className = "presets-label"; examples.textContent = "Examples";
     presets.appendChild(examples);
     for (const p of PRESETS) {
       const b = document.createElement("button"); b.type = "button"; b.className = "preset"; b.textContent = p.label;
@@ -610,7 +730,7 @@ details.assume { min-width: 0; }
     if (pid === undefined) delete input.dataset.pid;
     else { input.dataset.pid = String(pid); input.value = directory.labelOf.get(pid); input.dataset.valid = input.value; }
     input.dataset.applied = pid === undefined ? "" : input.value;
-    slot.classList.remove("pending", "bad");
+    slot.classList.remove("pending", "bad", "empty");
     slotMsg(side, i, "");
     fillSeasons(side, i, season);
     badges(side, i);
@@ -623,8 +743,8 @@ details.assume { min-width: 0; }
     const exact = exactPid(t);
     if (exact !== undefined) { setSlot(side, i, exact, null); run(); return; }
     if (typing) {
-      slot.classList.remove("bad"); slot.classList.add("pending");
-      slotMsg(side, i, t ? "Press Enter, or pick a name from the list." : "Type a player's name.", true);
+      slot.classList.remove("bad"); slot.classList.add("pending"); slot.classList.toggle("empty", !t);
+      slotMsg(side, i, "", true);
       run(); return;
     }
     const r = t ? resolveName(t) : { pid: undefined, matches: [] };
@@ -694,7 +814,7 @@ details.assume { min-width: 0; }
   const VALUE_NOTE = "Overall quality is a straight-line summary of the model, before combination effects: a typical player is about 0, and adding up five players' numbers gives a rough estimate for a lineup. The model itself is not a straight line.";
   function valueLine(row) {
     const v = VALUES(), off = v.offense[row], def = v.defense[row], net = off - def;
-    return `<abbr title="${VALUE_NOTE}" tabindex="0">Overall quality</abbr>: net <strong class="${tone(net)}">${signed(net)}</strong> (offense ${signed(off)}, points allowed ${signed(def)}) <span class="approx">a straight-line estimate</span><button type="button" class="dig" data-row="${row}">Details</button>`;
+    return `<span><span class="nw"><abbr title="${VALUE_NOTE}" tabindex="0">Overall quality</abbr> <strong class="${tone(net)}">${signed(net)}</strong></span> <span class="nw">(offense ${signed(off)}, allowed ${signed(def)})</span></span><button type="button" class="dig" data-row="${row}" title="Every estimate the model has for this player-season">Details ›</button>`;
   }
   // ---- player details: the capability library's estimates for one player-season ------------------
   const ZONES = ["at the rim", "in the paint", "from mid-range", "from long mid-range", "from the corner three", "from above-break three"];
@@ -754,6 +874,7 @@ details.assume { min-width: 0; }
       Array.from({ length: 16 }, (_, k) => `<tr><td>${k < 3 ? COUNTS[k][0].toUpperCase() + COUNTS[k].slice(1) : k < 9 ? "Shot share: " + ZONE_SHORT[k - 3] : k < 15 ? "Make rate: " + ZONE_SHORT[k - 9] : "Offensive rebounds"}</td>${
         cols.map((c) => `<td class="r">${valueText(c.items[k])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
     $("sheet-content").innerHTML = `<div style="display:grid;gap:16px">
+      <p class="sheet-key">Values in <span class="good">green</span> help his team and values in <span class="bad">red</span> hurt it; black ones are shifts in where shots come from, or too uncertain to call. ± is one standard error.</p>
       <div class="sheet-cols">${cols.map((c) => c.html).join("")}</div>
       <details><summary>All 16 estimates in each block</summary>${table}</details>
       <p class="note"><strong>pp</strong> means percentage points: +6.1 pp is 6.1 more out of every 100 shots (or makes). Counts and offensive rebounds are percent changes. Each estimate adjusts for the other nine players on the floor and uses every earlier possession, measured through the end of the season. ± is one standard error; an estimate is listed above only when it is at least 1.64 standard errors from zero. Percentiles are among that season's players with at least the median amount of data. The model reads these as inputs and learns how much weight to give each. <a href="model.html#library">How they are estimated</a>.</p>
@@ -764,9 +885,10 @@ details.assume { min-width: 0; }
     const pid = state.meta.players.pid[row], season = state.meta.players.season[row];
     $("sheet-title").textContent = state.meta.names[String(pid)] || "Player";
     const poss = state.meta.players.offense_possessions[row];
-    $("sheet-sub").innerHTML = `${seasonLabel(season)} · ${Math.round(poss).toLocaleString()} offensive possessions · ${valueLine(row).replace(/<button[^>]*>Details<\/button>/, "")}`;
+    $("sheet-sub").innerHTML = `${seasonLabel(season)} · ${Math.round(poss).toLocaleString()} offensive possessions<br>${valueLine(row).replace(/<button[^>]*>[^<]*<\/button>/, "")}, a straight-line estimate`;
     $("sheet-content").innerHTML = `<p class="note">Loading the estimates…</p>`;
     $("sheet").showModal();
+    document.body.classList.add("sheet-open");
     worker.postMessage({ id: `profile-${++sheetSeq}`, kind: "profile", row });
   }
   document.addEventListener("click", (ev) => {
@@ -774,6 +896,7 @@ details.assume { min-width: 0; }
     if (b && state.ready) openSheet(Number(b.dataset.row));
   });
   $("sheet-close").addEventListener("click", () => $("sheet").close());
+  $("sheet").addEventListener("close", () => document.body.classList.remove("sheet-open"));
   $("sheet").addEventListener("click", (ev) => { if (ev.target === $("sheet")) $("sheet").close(); });
 
   function straightLine(aRows, bRows) {
@@ -832,36 +955,52 @@ details.assume { min-width: 0; }
   const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : "–");
   const signed = (x, d = 1) => { const r = Number(x.toFixed(d)); return (r >= 0 ? "+" : "−") + Math.abs(r).toFixed(d); };
   // The straight line, the full model before combination effects, the combination effects: three numbers that add up.
-  const modelSays = (base, line, combo, point, matchup) => {
-    const gap = base - line;
+  // How the net adds up (designer QA 2026-10-19: a short equation instead of a ten-line paragraph). line: the straight-line
+  // estimate's row and its explanation; then the full model, the combination effects and the forecast.
+  function addsUp(lineLabel, lineValue, lineSub, base, combo, point, matchup) {
+    const gap = base - lineValue, one = (v) => signed(v) + "\u2007";
     const why = Math.abs(gap) < 0.05 ? "" : Math.abs(gap) < 1 || matchup
-      ? " (overall quality is only a straight-line summary: in the full model, players' strengths overlap or fit together in ways a straight line can't show)"
-      : gap < 0 ? " (overall quality is only a straight-line summary: in the full model, strong players' strengths overlap, for example several scorers sharing one ball, so stacking them adds less)"
-      : " (overall quality is only a straight-line summary: in the full model, these players' strengths fit together better than a straight line assumes)";
-    return `The full model says ${signed(base)} before combination effects${why}; <strong>combination effects add ${signed(combo, 2)}</strong>, for the forecast of ${signed(point)}.`;
-  };
-  function rangeSvg(r, lo, hi, reference, armC, alone) {
-    const W = 600, H = 34, pad = 6, x = (v) => pad + (W - 2 * pad) * (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo);
-    const ticks = [];
-    const step = (hi - lo) > 30 ? 10 : 5;
-    for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) ticks.push(t);
-    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="80% range ${fmt(r.low)} to ${fmt(r.high)}">
-      ${ticks.map((t) => `<line x1="${x(t)}" x2="${x(t)}" y1="${H - 6}" y2="${H}" stroke="var(--line)" stroke-width="1"/>`).join("")}
-      <line x1="${pad}" x2="${W - pad}" y1="${H - 6}" y2="${H - 6}" stroke="var(--line)" stroke-width="1"/>
-      ${reference === null ? "" : `<line x1="${x(reference)}" x2="${x(reference)}" y1="2" y2="${H - 6}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 2"/>`}
-      <rect x="${x(r.low)}" y="9" width="${Math.max(x(r.high) - x(r.low), 2)}" height="12" rx="3" fill="var(--band)"/>
-      <rect x="${x(r.point) - 1.5}" y="4" width="3" height="22" fill="var(--ink)"/>
-      ${armC === undefined ? "" : `<circle cx="${x(armC)}" cy="15" r="4.5" fill="var(--accent)"/>`}
-      ${alone === undefined ? "" : `<circle cx="${x(alone)}" cy="15" r="4.5" fill="none" stroke="var(--ink)" stroke-width="1.6"/>`}
-    </svg>`;
+      ? "Overall quality is only a straight-line summary: in the full model, players' strengths overlap or fit together in ways a straight line can't show."
+      : gap < 0 ? "Overall quality is only a straight-line summary: in the full model, strong players' strengths overlap (several scorers share one ball), so stacking them adds less."
+      : "Overall quality is only a straight-line summary: in the full model, these players' strengths fit together better than a straight line assumes.";
+    return `<h3>How the net adds up</h3>
+      <div class="sum"><span>${lineLabel}</span><span class="v">${one(lineValue)}</span>${lineSub ? `<span class="sub">${lineSub}</span>` : ""}
+        <span class="rule"></span>
+        <span>The full model, before combination effects</span><span class="v">${one(base)}</span>
+        <span class="key">Combination effects</span><span class="v key">${signed(combo, 2)}</span>
+        <span class="rule solid"></span><span class="total">Forecast</span><span class="v total">${one(point)}</span></div>
+      ${why ? `<p class="sum-note">${why}</p>` : ""}`;
   }
-  function metric(label, r, lo, hi, reference, armC, net, alone) {
+  // A scale for a card's strips, in round numbers around everything they draw (designer QA 2026-10-19: labelled, and
+  // using the card's width rather than a fixed 40 points).
+  function scaleOf(values, minSpan) {
+    let lo = Math.floor((Math.min(...values) - 1) / 5) * 5, hi = Math.ceil((Math.max(...values) + 1) / 5) * 5;
+    while (hi - lo < minSpan) { if ((hi - lo) % 10) hi += 5; else lo -= 5; }
+    return [lo, hi];
+  }
+  const drawn = (r, armC, alone) => [r.low, r.high, r.point, armC, alone].filter((v) => v !== undefined);
+  // The range strip: HTML, so the tick labels stay crisp at any width. Markers keep a thin halo where they overlap.
+  function rangeStrip(r, [lo, hi], reference, armC, alone, net) {
+    const at = (v) => `${(100 * (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo)).toFixed(2)}%`;
+    const step = hi - lo > 30 ? 10 : 5, ticks = [];
+    for (let t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) ticks.push(t);
+    const label = (t) => (net ? (t > 0 ? "+" + t : minus(String(t))) : String(t));
+    const named = ticks.length > 6 ? ticks.filter((t) => t % 10 === 0) : ticks;
+    return `<div class="strip" role="img" aria-label="80% range ${fmt(r.low)} to ${fmt(r.high)}, forecast ${fmt(r.point)}"><div class="track">
+      ${ticks.map((t) => `<i class="tick" style="left:${at(t)}"></i>`).join("")}
+      ${reference === null ? "" : `<i class="ref" style="left:${at(reference)}"></i>`}
+      <i class="band" style="left:${at(r.low)};width:calc(${at(r.high)} - ${at(r.low)})"></i>
+      ${alone === undefined ? "" : `<i class="alone" style="left:${at(alone)}"></i>`}
+      ${armC === undefined ? "" : `<i class="armc" style="left:${at(armC)}"></i>`}
+      <i class="point" style="left:${at(r.point)}"></i>
+    </div><div class="ticks" aria-hidden="true">${named.map((t) => `<span${t <= lo ? ` class="l"` : t >= hi ? ` class="r"` : ""} style="left:${at(t)}">${label(t)}</span>`).join("")}</div></div>`;
+  }
+  function metric(label, r, scale, reference, armC, net, alone) {
     const cls = net ? (Math.abs(r.point) < 0.05 ? "" : r.point > 0 ? "pos" : "neg") : "";
     const value = net ? signed(r.point) : fmt(r.point);
     return `<div class="metric ${net ? "net" : ""}">
-      <span class="label">${label}</span><span class="value ${cls}">${value}</span>
-      <span></span>${rangeSvg(r, lo, hi, reference, armC, alone)}
-      <span class="range">80% range ${net ? signed(r.low) : fmt(r.low)} to ${net ? signed(r.high) : fmt(r.high)}</span>
+      <span class="label">${label}</span><span class="range">80% range ${net ? signed(r.low) : fmt(r.low)} to ${net ? signed(r.high) : fmt(r.high)}</span>
+      <span class="value ${cls}">${value}</span>${rangeStrip(r, scale, reference, armC, alone, net)}
     </div>`;
   }
   // The model's reasons for a wide range, in plain words: [chip class, chip, sentence, short phrase for the callout].
@@ -889,23 +1028,41 @@ details.assume { min-width: 0; }
     if ((m = r.match(/^assumption N: the learned combinations move the (\w+) ([+-]?\d+(?:\.\d+)?)/)))
       return ["assume", "learned effects", `The combination effects the model learned from real lineups move the net ${minus(m[2])}. They are not checked one by one.`, null];
     if ((m = r.match(/^assumption K: .*?together: (.*)\. If they keep adding pair by pair, the (\w+) moves ([+-]?\d+(?:\.\d+)?)/)))
-      return ["assume", "more than measured", `More players of one type than games have measured together (${m[1]}). The measured effects stop at that size; if they kept growing, the net would move ${minus(m[3])}.`, null];
+      return ["assume", "more than measured", `More players of one type than games have measured together. The measured effects stop at that size; if they kept growing, the net would move ${minus(m[3])}.`, null,
+              m[1].split("; ").map((x) => x.replace(/ \(measured up to (\d+)\)/, ", measured together up to $1"))];
     return ["", "other", capFirst(r), null];
   }
+  // One badge per kind of reason, above its text; several reasons of one kind as a list (designer QA 2026-10-19).
   function drawReasons(reasons) {
     const ul = $("reasons"); ul.innerHTML = "";
+    const el = (tag, text) => { const e = document.createElement(tag); e.textContent = text; return e; };
+    const add = (cls, label, ...body) => {
+      const li = document.createElement("li"), chip = el("span", label); chip.className = "chip " + cls;
+      li.append(chip, ...body); ul.appendChild(li);
+    };
     if (!reasons.length) {
-      const li = document.createElement("li");
-      li.innerHTML = `<span class="chip">in range</span><span></span>`;
-      li.lastChild.textContent = `Every player is from the seasons the model learned from (${trainedSeasons()}), and the lineup looks like real lineups of those seasons. The range's width is the model's measured error on real lineups.`;
-      ul.appendChild(li); return;
+      add("", "in range", el("span", `Every player is from the seasons the model learned from (${trainedSeasons()}), and the lineup looks like real lineups of those seasons. The range's width is the model's measured error on real lineups.`));
+      return;
     }
+    const groups = new Map();
     for (const r of reasons) {
-      const li = document.createElement("li"); const [cls, text, sentence] = plainReason(r);
-      li.title = capFirst(r);                     // the model's own wording
-      const chip = document.createElement("span"); chip.className = "chip " + cls; chip.textContent = text;
-      const body = document.createElement("span"); body.textContent = sentence;
-      li.append(chip, body); ul.appendChild(li);
+      const [cls, label, sentence, , rows] = plainReason(r);
+      if (!groups.has(label)) groups.set(label, { cls, items: [] });
+      groups.get(label).items.push({ sentence, rows, raw: r });
+    }
+    for (const [label, g] of groups) {
+      let items = g.items;
+      const sides = items.filter((x) => / is unlike any lineup /.test(x.sentence));
+      if (sides.length === 2)                      // offense and defense: one line
+        items = [{ sentence: sides[0].sentence.replace(/^Its offense is/, "Its offense and its defense are"), raw: sides.map((x) => x.raw).join("; ") },
+                 ...items.filter((x) => !sides.includes(x))];
+      if (items.length === 1 && !items[0].rows) {
+        const body = el("span", items[0].sentence); body.title = capFirst(items[0].raw);   // the model's own wording
+        add(g.cls, label, body); continue;
+      }
+      const lead = items.find((x) => x.rows), list = document.createElement("ul");
+      for (const x of items) for (const line of x.rows || [x.sentence]) list.appendChild(el("li", line));
+      add(g.cls, label, ...(lead ? [el("span", lead.sentence)] : []), list);
     }
   }
   function drawAssumptions(b, layer, learned, keys) {
@@ -945,19 +1102,16 @@ details.assume { min-width: 0; }
         <td class="num">${fmt(100 * p.usage_share)}%</td><td class="num">${fmt(100 * p.usual_share)}%</td><td class="num ${cls}">${signed(shift)}</td>
         <td class="num">${fmt(p.points)}</td><td class="num">${fmt(p.threes)}</td><td class="num">${fmt(p.rim_attempts)}</td></tr>`;
     }).join("");
-    return `<div class="scroll"><table><thead><tr><th>Player</th><th>Share of plays</th><th>Usual share</th><th>Change</th><th>Points</th><th>Threes tried</th><th>Shots at rim</th></tr></thead><tbody>${body}</tbody></table></div>
-      <p class="muted" style="font-size:.82rem">Share of plays: each player's share of the lineup's shots, trips to the free-throw line and turnovers. The usual share is what it would be if everyone kept his own habits; the change is how far this lineup pushes him from it. Points, threes tried and shots at the rim are per 100 team possessions.</p>`;
+    return `<div class="scroll"><table><thead><tr><th>Player</th><th>Share of plays</th><th>Usual share</th><th>Change</th><th>Points</th><th>Threes tried</th><th>Shots at rim</th></tr></thead><tbody>${body}</tbody></table></div>`;
   }
+  const PLAYERS_NOTE = `<p class="muted" style="font-size:.82rem">Share of plays: each player's share of the lineup's shots, trips to the free-throw line and turnovers. The usual share is what it would be if everyone kept his own habits; the change is how far this lineup pushes him from it. Points, threes tried and shots at the rim are per 100 team possessions.</p>`;
   function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-  function breakdown(title, e, refKey, refLabel, creation) {
-    const parts = [`<div class="channels" style="display:grid;gap:8px"><p><strong>${title}</strong></p>${channelsHtml(e.channels)}</div>`,
-      teamTable(e.team, e[refKey], refLabel), playersTable(e.players)];
-    if (creation) {
-      const c = creation;
-      const verdict = c.supply >= 1.25 * c.demand ? "plenty" : c.supply >= c.demand ? "enough" : "not enough";
-      parts.push(`<p class="muted" style="font-size:.85rem">Passing: the lineup's scorers need about ${fmt(c.demand, 0)} assisted baskets per 100 possessions, and its passers usually supply about ${fmt(c.supply, 0)}: ${verdict}.</p>`);
-    }
-    return parts.join("");
+  function breakdown(title, e, refKey, refLabel, creation, note) {   // note: the players table's footnote, printed once per card
+    // the scoring channels and the team's table on the left, the players on the right (designer QA 2026-10-19)
+    const left = `<div class="channels" style="display:grid;gap:8px"><p><strong>${title}</strong></p>${channelsHtml(e.channels)}</div>${teamTable(e.team, e[refKey], refLabel)}`;
+    const verdict = creation ? (creation.supply >= 1.25 * creation.demand ? "plenty" : creation.supply >= creation.demand ? "enough" : "not enough") : "";
+    const passing = creation ? `<p class="muted" style="font-size:.85rem">Passing: the lineup's scorers need about ${fmt(creation.demand, 0)} assisted baskets per 100 possessions, and its passers usually supply about ${fmt(creation.supply, 0)}: ${verdict}.</p>` : "";
+    return `<div class="bd"><div>${left}</div><div>${playersTable(e.players)}${note ? PLAYERS_NOTE : ""}${passing}</div></div>`;
   }
 
   // ---- combination effects ----------------------------------------------------------------------
@@ -993,7 +1147,7 @@ details.assume { min-width: 0; }
              n: counts[a], max: max[a], plural: K.plurals[a] };
   }
   function curveSvg(c, event) {
-    const W = 190, H = 64, padL = 8, padR = 8, top = 6, bottom = 16;
+    const W = 240, H = 82, padL = 36, padR = 8, top = 8, bottom = 22;
     const visible = c.held.concat(c.continued.slice(0, Math.min(c.max + 2, 6)));
     let lo = Math.min(0, ...visible), hi = Math.max(0, ...visible);
     if (hi - lo < 0.5) { const m = (hi + lo) / 2; lo = m - 0.25; hi = m + 0.25; }
@@ -1006,6 +1160,7 @@ details.assume { min-width: 0; }
       <path d="${path(c.held, 0, 5)}" fill="none" stroke="var(--accent)" stroke-width="2"/>
       ${c.held.map((v, n) => `<circle cx="${x(n)}" cy="${y(v)}" r="${n === c.n ? 4.5 : 2.2}" fill="${n === c.n ? "var(--ink)" : "var(--accent)"}"/>`).join("")}
       ${[0, 1, 2, 3, 4, 5].map((n) => `<text x="${x(n)}" y="${H - 3}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--mono)">${n}</text>`).join("")}
+      ${[hi, lo].map((v) => `<text x="${padL - 5}" y="${y(v) + 3.5}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--mono)">${signed(v, 1)}</text>`).join("")}
     </svg>`;
   }
   function effectRow(e, rows, perspective) {
@@ -1022,8 +1177,8 @@ details.assume { min-width: 0; }
     const overlap = rows.reduce((c, r) => c + (hasType(r, info.a) && hasType(r, info.b) ? 1 : 0), 0);
     const full = info.a === info.b ? count(info.a) * (count(info.a) - 1) / 2 : count(info.a) * count(info.b) - overlap;
     const held = full > e.pairs + 1e-9 ? ` (counted up to the most games have measured; ${fmt(full, 0)} in all)` : "";
-    const pairings = `${fmt(e.pairs, 0)} such pairing${Math.round(e.pairs) === 1 ? "" : "s"} here${held}; the model already expects ${fmt(e.expected, 1)} such pairings from the players alone, so only the difference counts`;
-    const rep = info.label === "held up across eras" ? ["ok", "also seen in 2007–13"] : info.label.includes("reverses") ? ["", "opposite in 2007–13"] : ["", "same direction in 2007–13"];
+    const pairings = `${fmt(e.pairs, 0)} pairing${Math.round(e.pairs) === 1 ? "" : "s"} here${held}, against ${fmt(e.expected, 1)} expected from the players alone`;
+    const rep = info.label === "held up across eras" ? "also seen in 2007–13" : info.label.includes("reverses") ? "opposite in 2007–13" : "same direction in 2007–13";
     let curvePart = "";
     if (info.a === info.b) {
       const c = curve(e, rows);
@@ -1033,8 +1188,8 @@ details.assume { min-width: 0; }
       <span class="title">${escapeHtml(titleOf(e))}</span><span class="pts ${good ? "good" : "bad"}" title="Points per 100 possessions">${signed(e.points, 2)}</span>
       <div class="detail">
         <span class="who">${escapeHtml(whoLine)}</span>
-        <span class="row2"><span>${pairings} → ${who}${signed(e.change, 2)} ${UNIT[e.event]}</span>
-          <span class="chip ok">confirmed on 2022–26 games</span><span class="chip ${rep[0]}">${rep[1]}</span></span>
+        <span>${pairings} → ${who}${signed(e.change, 2)} ${UNIT[e.event]}</span>
+        <span class="held"><b>✓</b> Held up on 2022–26 games · ${rep}</span>
         ${curvePart}
       </div>
     </div>`;
@@ -1063,7 +1218,8 @@ details.assume { min-width: 0; }
     return `<div class="effect">
       <span class="title">${title}</span><span class="pts ${good ? "good" : "bad"}" title="Points per 100 possessions">${signed(points, 2)}</span>
       <div class="detail">
-        <span class="row2"><span>${who}${parts}</span><span class="chip">learned from real lineups</span></span>
+        <span>${who}${parts}</span>
+        <span class="held">Learned from real lineups</span>
       </div>
     </div>`;
   }
@@ -1075,7 +1231,7 @@ details.assume { min-width: 0; }
                                      ["Net", L.layer.margin + N.margin, 1]]
         .map(([k, v, sign]) => `<div><span class="k">${k}</span><span class="v ${v * sign >= 0 ? "up" : "down"}">${signed(v, 2)}</span></div>`).join("");
       $("combo-cols").innerHTML = `<div class="combo-col"><h3>Team A's offense</h3>${learnedRow(N.offense, N.events.offense, 1, "Every pairing of teammates, as the model learned it", "")}${effectList(L.effects.offense, rows, 1)}</div>
-        <div class="combo-col"><h3>Team A's defense <span style="text-transform:none;letter-spacing:0">(points allowed)</span></h3>${learnedRow(N.defense, N.events.defense, -1, "Every pairing of defenders, as the model learned it", "opponents: ")}${effectList(L.effects.defense, rows, -1)}</div>`;
+        <div class="combo-col"><h3>Team A's defense (points allowed)</h3>${learnedRow(N.defense, N.events.defense, -1, "Every pairing of defenders, as the model learned it", "opponents: ")}${effectList(L.effects.defense, rows, -1)}</div>`;
       $("combo-notes").innerHTML = beyondNote(L, "net") + L.notes.map(h1Note).join("");
     } else {
       $("combo-totals").innerHTML = [["A's offense", L.layer.a_offense + N.a_offense], ["B's offense", L.layer.b_offense + N.b_offense],
@@ -1092,11 +1248,13 @@ details.assume { min-width: 0; }
     const K = meta.combinations, reversed = K.effects.filter((e) => e.label.includes("reverses")).length;
     document.querySelectorAll(".n-measured").forEach((el) => { el.textContent = String(K.effects.length); });
     const evidence = (x) => `${signed(x.coef, 2)} (±${fmt(x.se, 2)})`;
-    const rows = K.effects.map((e) => `<tr><td class="wrap">${escapeHtml(titleOf(e))}</td><td class="wrap" data-label="What changes">${UNIT[e.event]}${e.side === "defense" ? ", opponents" : ""}</td>
+    const rows = K.effects.map((e) => `<tr><td class="text">${escapeHtml(titleOf(e))}</td><td class="text" data-label="What changes">${UNIT[e.event]}${e.side === "defense" ? ", opponents" : ""}</td>
       <td class="num" data-label="Per pairing, used">${evidence({ coef: e.beta, se: e.se })}</td><td class="num" data-label="≈ points per 100 per pairing">${signed(e.points_per_pairing, 2)}</td>
       <td class="num" data-label="Held-out check 2022–26, seasons">${evidence(e.confirmation)}, ${e.confirmation.seasons}/5</td><td class="num" data-label="2007–13">${evidence(e.replication)}</td></tr>`).join("");
-    $("library-inner").innerHTML = `<p>A pairing is one player of the first type next to a different player of the second; a player who is both types counts in both roles. The neural model's value for a player already assumes the pairings he usually has, so an effect counts only pairings beyond that: what "the model already expects from the players alone" is the straight-line estimate from the lineup's type counts, which can dip below zero when a lineup has none of either type. A lineup with more of a pairing than that gets the effect, and one with fewer gets the reverse. The search covered 105 type pairings across points and seven events. Pairings were found on 2016–21 games and confirmed on 2022–26 games the search never saw: these ${K.effects.length} held up. Each was re-checked on 2007–13, shown in the last column; most point the same way there${reversed ? `, and ${reversed === 1 ? "one points" : `${reversed} point`} the other way` : ""}. None changes points by enough to see directly (the limit is about 0.5 per 100 per pairing), so their points come from accounting: shots moved to the rim or the arc at the offense's own make rates, turnovers at its points per possession, and free throws net of the shot they replace.</p>
-      <div class="scroll"><table><thead><tr><th class="wrap">Combination</th><th class="wrap">What changes</th><th>Per pairing, used (2022–26, fitted together)</th><th>≈ points per 100 per pairing*</th><th>Held-out check 2022–26 (alone), seasons</th><th>2007–13 (alone)</th></tr></thead><tbody>${rows}</tbody></table></div>
+    $("library-inner").innerHTML = `<p>A pairing is one player of the first type next to a different player of the second; a player who is both types counts in both roles. The neural model's value for a player already assumes the pairings he usually has, so an effect counts only pairings beyond that: what "the model already expects from the players alone" is the straight-line estimate from the lineup's type counts, which can dip below zero when a lineup has none of either type. A lineup with more of a pairing than that gets the effect, and one with fewer gets the reverse.</p>
+      <p>The search covered 105 type pairings across points and seven events. Pairings were found on 2016–21 games and confirmed on 2022–26 games the search never saw: these ${K.effects.length} held up. Each was re-checked on 2007–13, shown in the last column; most point the same way there${reversed ? `, and ${reversed === 1 ? "one points" : `${reversed} point`} the other way` : ""}.</p>
+      <p>None changes points by enough to see directly (the limit is about 0.5 per 100 per pairing), so their points come from accounting: shots moved to the rim or the arc at the offense's own make rates, turnovers at its points per possession, and free throws net of the shot they replace.</p>
+      <div class="scroll"><table><thead><tr><th class="text">Combination</th><th class="text">What changes</th><th>Per pairing, used (2022–26, fitted together)</th><th>≈ points per 100 per pairing*</th><th>Held-out check 2022–26 (alone), seasons</th><th>2007–13 (alone)</th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="muted" style="font-size:.82rem">*At league-average rates; positive is more points for the offense. The "used" column is fitted on 2022–26 without the last two minutes of close games, with all ${K.effects.length} together. Pairings titled "nothing beyond …" held up alone but are carried by their neighbours once fitted together, and add little. Small guards beside a rim anchor is a separate, pre-registered test for 2026–27 and is not in the number.</p>`;
   }
 
@@ -1108,66 +1266,82 @@ details.assume { min-width: 0; }
     miniShow();
     setStale(false);
     drawNotes(result);
-    const m = result.band.margin;
-    $("mini-text").innerHTML = `${result.kind === "lineup" ? "Net" : "Net, A − B"} <strong>${signed(m.point)}</strong> (80% range ${signed(m.low)} to ${signed(m.high)})`;
+    const m = result.band.margin, mcls = Math.abs(m.point) < 0.05 ? "" : m.point > 0 ? "pos" : "neg";
+    $("mini-text").innerHTML = `<span class="k">${result.kind === "lineup" ? "Net" : "Net, A − B"}</span><strong class="${mcls}">${signed(m.point)}</strong><span class="r">80% range ${signed(m.low)} to ${signed(m.high)}</span>`;
     $("mini").classList.remove("stale");
-    const league = state.meta.explain.league;
     const leagueOffense = state.leagueOffense;
+    // each card's two scoring strips share one scale, and the net strip has its own around zero
+    const sides = (keys) => {
+      const b = result.band, L = result.comb.layer, N = result.learned;
+      return keys.map((k) => ({ r: b[k], armC: b.arms.C[k] + L[k] + N[k], alone: b.arms.R[k] }));
+    };
+    const draw = (labels, keys) => {
+      const [x, y, net] = sides(keys);
+      const pts = scaleOf([...drawn(x.r, x.armC, x.alone), ...drawn(y.r, y.armC, y.alone), leagueOffense], 20);
+      const nets = scaleOf([...drawn(net.r, net.armC, net.alone), 0], 20);
+      $("metrics").innerHTML = metric(labels[0], x.r, pts, leagueOffense, x.armC, false, x.alone)
+        + metric(labels[1], y.r, pts, leagueOffense, y.armC, false, y.alone) + metric(labels[2], net.r, nets, 0, net.armC, true, net.alone);
+    };
+    $("legend").hidden = false;
+    $("adding").hidden = false;
+    $("reasons-card").hidden = false;
     if (result.kind === "lineup") {
       const b = result.band;
       $("result-title").textContent = "Against a league-average lineup";
+      state.idleNote = `Points per 100 possessions. Defense is points allowed, so lower is better; league average is ${fmt(leagueOffense)}.`;
       const L = result.comb.layer, N = result.learned;
-      $("metrics").innerHTML = metric("Offense", b.offense, 95, 135, leagueOffense, b.arms.C.offense + L.offense + N.offense, false, b.arms.R.offense)
-        + metric("Defense", b.defense, 95, 135, leagueOffense, b.arms.C.defense + L.defense + N.defense, false, b.arms.R.defense)
-        + metric("Net", b.margin, -25, 25, 0, b.arms.C.margin + L.margin + N.margin, true, b.arms.R.margin)
-        + `<p class="muted" style="font-size:.82rem">Defense is points allowed per 100, so lower is better. League average is ${fmt(leagueOffense)} on both ends.</p>`;
+      draw(["Offense", "Defense", "Net"], ["offense", "defense", "margin"]);
       const S = straightLine(result.a);
-      $("adding").innerHTML = `<strong>Adding up the five overall qualities gives net ${signed(S.shown)}</strong>: five typical players (each about 0) would be net ${signed(S.start)} against this league-average lineup, which is the average lineup that played 100+ possessions together (better than most, because coaches keep good lineups on the floor), and these five add ${signed(S.sum)}. `
-        + modelSays(b.arms.R.margin, S.shown, L.margin + N.margin, b.margin.point);
+      $("adding").innerHTML = addsUp("Adding up the five players' overall qualities", S.shown,
+        `Five typical players: ${signed(S.start)} against this opponent (the average lineup that played 100+ possessions together, better than most); these five add ${signed(S.sum)}.`,
+        b.arms.R.margin, L.margin + N.margin, b.margin.point);
       drawReasons(b.reasons);
       drawAssumptions(b, result.comb, result.learned, [["offense", "Offense"], ["defense", "Defense"], ["margin", "Net"]]);
       $("breakdown-title").textContent = "How Team A's offense gets its points";
-      $("breakdowns").innerHTML = breakdown("Points per 100 possessions, compared with a league-average offense", result.explain, "league", "League average", result.explain.creation);
+      $("breakdowns").innerHTML = breakdown("Points per 100 possessions, compared with a league-average offense", result.explain, "league", "League average", result.explain.creation, true);
     } else {
       const b = result.band;
       $("result-title").textContent = "Team A against Team B";
+      state.idleNote = `Points per 100 possessions; league average is ${fmt(leagueOffense)}.`;
       const L = result.comb.layer, N = result.learned;
-      $("metrics").innerHTML = metric("A's offense", b.a_offense, 95, 135, leagueOffense, b.arms.C.a_offense + L.a_offense + N.a_offense, false, b.arms.R.a_offense)
-        + metric("B's offense", b.b_offense, 95, 135, leagueOffense, b.arms.C.b_offense + L.b_offense + N.b_offense, false, b.arms.R.b_offense)
-        + metric("Net, A − B", b.margin, -30, 30, 0, b.arms.C.margin + L.margin + N.margin, true, b.arms.R.margin);
+      draw(["A's offense", "B's offense", "Net, A − B"], ["a_offense", "b_offense", "margin"]);
       const S = straightLine(result.a, result.b);
-      $("adding").innerHTML = `<strong>Adding up overall qualities: Team A ${signed(S.sumA)}, Team B ${signed(S.sumB)}, so net ${signed(S.shown)} for Team A.</strong> `
-        + modelSays(b.arms.R.margin, S.shown, L.margin + N.margin, b.margin.point, true);
+      $("adding").innerHTML = addsUp("Adding up overall qualities", S.shown, `Team A ${signed(S.sumA)}, Team B ${signed(S.sumB)}.`,
+        b.arms.R.margin, L.margin + N.margin, b.margin.point, true);
       drawReasons(b.reasons);
       drawAssumptions(b, result.comb, result.learned, [["a_offense", "A's offense"], ["b_offense", "B's offense"], ["margin", "Net"]]);
       $("breakdown-title").textContent = "What each defense does to the other offense";
       $("breakdowns").innerHTML = breakdown("Team A's offense against Team B, compared with a league-average defense", result.explainA, "average_defense", "Against an average defense")
-        + breakdown("Team B's offense against Team A, compared with a league-average defense", result.explainB, "average_defense", "Against an average defense");
+        + breakdown("Team B's offense against Team A, compared with a league-average defense", result.explainB, "average_defense", "Against an average defense", null, true);
     }
     drawCombos(result);
   }
-  function setStatus(text, busy, warn) { const s = $("status"); s.textContent = text; s.classList.toggle("busy", Boolean(busy)); s.classList.toggle("warn", Boolean(warn)); }
+  // The result's message line (a fixed two-line slot under the title; designer QA 2026-10-19). text null keeps what it says;
+  // a recompute keeps the units note, and only the dot beside the title shows the model working.
+  function setStatus(text, busy, warn) {
+    const s = $("status");
+    if (text !== null) { s.textContent = text; s.title = text; }
+    s.classList.toggle("busy", Boolean(busy)); s.classList.toggle("warn", Boolean(warn)); $("busy").hidden = !busy;
+  }
   // Numbers on screen always belong to the lineup in the boxes, or are greyed out (QA, 2026-10-18).
   function setStale(on) {
     for (const id of ["result", "combos", "below"]) $(id).classList.toggle("is-stale", on && state.shown);
-    if (on && state.shown) { $("mini").classList.add("stale"); $("mini-text").textContent = "Lineup incomplete: numbers out of date"; }
+    if (on && state.shown) { $("mini").classList.add("stale"); $("mini-text").innerHTML = `<span class="k">Lineup incomplete</span><span class="r">The numbers are for the last complete lineup</span>`; }
   }
   function slotProblem(side, i) {
     const slot = $(`slot-${side}-${i}`), t = slot ? $(`name-${side}-${i}`).value.trim() : "";
     if (!slot) return null;
     const who = `Team ${side.toUpperCase()} player ${i + 1}`;
-    if (slot.classList.contains("pending")) return `${who}: press Enter or pick a name from the list`;
+    if (slot.classList.contains("pending")) return `${who}: press Enter or pick a name`;
     if (slotRow(side, i) !== null) return null;
     if (!t) return `${who} is empty`;
     return resolveName(t).matches.length > 1 ? `${who}: pick which “${t}” you mean` : `${who}: no player matches “${t}”`;
   }
   // Above the numbers: an unusual lineup, or one player-season on both teams.
   function drawNotes(result) {
-    let short = [...new Set(result.band.reasons.map(plainReason).map((p) => p[3]).filter(Boolean))];
-    const unlike = short.filter((x) => / is unlike the lineups/.test(x));
-    if (unlike.length > 1) short = ["it is unlike the lineups the model learned from", ...short.filter((x) => !unlike.includes(x))];
+    const unusual = result.band.reasons.some((r) => plainReason(r)[3]);     // a shape reason: the reasons below say which
     const notes = [];
-    if (short.length) notes.push(`<p class="callout"><strong>Unusual lineup:</strong> ${short.join("; ")}. Nothing like it played in the seasons the model learned from (${trainedSeasons()}), so treat the number as a rough guess; the range is wider for that reason. <a href="#reasons-card">Why the range is this wide</a></p>`);
+    if (unusual) notes.push(`<p class="callout"><strong>Unusual lineup:</strong> nothing like it played in the seasons the model learned from, so treat the number as a rough guess. <a href="#reasons-card">Why</a></p>`);
     if (result.kind !== "lineup") {
       const P = state.meta.players, both = result.a.filter((r) => result.b.includes(r));
       const who = both.map((r) => `${escapeHtml(state.meta.names[String(P.pid[r])])} ${seasonLabel(P.season[r])}`);
@@ -1186,12 +1360,13 @@ details.assume { min-width: 0; }
     const issues = sides.flatMap((side) => [0, 1, 2, 3, 4].map((i) => slotProblem(side, i))).filter(Boolean);
     if (issues.length) {
       setStale(true);
-      setStatus(`${issues.join(". ")}.${state.shown ? " Until then, the greyed numbers are for the last complete lineup." : ""}`, false, true);
+      setStatus(`${issues[0]}${issues.length > 1 ? ` (and ${issues.length - 1} more)` : ""}.${state.shown ? " The greyed numbers are for the last complete lineup." : ""}`, false, true);
+      $("status").title = issues.join(". ") + ".";
       return;
     }
     const a = readTeam("a"), b = state.teamB === "five" ? readTeam("b") : null;
     const id = ++state.seq;
-    setStatus(state.warm ? "Computing" : "Computing (the first lineup takes a few seconds)", true);
+    setStatus(state.warm ? state.idleNote || null : "Computing the first lineup: a few seconds", true);
     worker.postMessage({ id, kind: b ? "matchup" : "lineup", a, b, rule: state.rule });
   }
 
@@ -1345,6 +1520,8 @@ details.assume { min-width: 0; }
   const sides = () => (piece.opponent ? ["a_offense", "b_offense"] : ["offense", "defense"]);
   // The searches' columns, in plain words and the same in both modes (QA 2026-10-19: "Net, A − B", "B's offense",
   // "inside the margin" and "compare rows, not signs" were unclear). who: whose net it is.
+  // A search's note: what was searched, then the column key behind a disclosure (designer QA 2026-10-19: walls of text).
+  const howNote = (shown, key) => `<p>${escapeHtml(shown)}</p><details class="how"><summary>How to read this table</summary><p>${escapeHtml(key)}</p></details>`;
   function searchHeads(opponent, who) {
     const vs = opponent ? "Team B's five" : "a league-average lineup";
     return `<th title="${who}: points scored minus points allowed per 100 possessions, against ${vs}">Net</th><th class="rng">80% range</th>`
@@ -1361,7 +1538,7 @@ details.assume { min-width: 0; }
     const vs = now ? `<td class="num vs">${x.current ? "" : signed(x.f.margin - now.f.margin)}</td>` : "";
     const cls = x.current ? "now" : (piece.used === r ? "used" : "");
     return `<tr class="${cls}"><td class="num">${x.current ? "" : k + 1}</td>
-      <td class="who">${name} <span class="s">${seasonLabel(P.season[r])}${x.current ? " · current" : ""}</span>${x.current ? "" : `<button type="button" class="use" data-row="${r}" title="Put him in spot ${piece.open + 1} of Team A"${piece.used === r ? " disabled" : ""}>${piece.used === r ? "In Team A ✓" : "Put in Team A"}</button>`}</td>
+      <td class="who"><div class="who-in"><span>${name} <span class="s">${seasonLabel(P.season[r])}${x.current ? " · current" : ""}</span></span>${x.current ? "" : `<button type="button" class="use" data-row="${r}" title="Put him in spot ${piece.open + 1} of Team A"${piece.used === r ? " disabled" : ""}>${piece.used === r ? "In Team A ✓" : "Put in Team A"}</button>`}</div></td>
       <td class="num net ${tone(x.f.margin)}">${signed(x.f.margin)}</td><td class="num rng">${band}</td>
       <td class="num od">${fmt(x.f[sides()[0]])}</td><td class="num od">${fmt(x.f[sides()[1]])}</td>
       <td class="num cmb">${signed(x.f.learned + x.f.combinations, 2)}</td>${vs}</tr>`;
@@ -1419,16 +1596,15 @@ details.assume { min-width: 0; }
     const { exact, complete } = ranked;
     top(exact);
     $("piece-note").hidden = false;
-    $("piece-note").textContent = `Against ${opponent ? "Team B's five" : "a league-average lineup"}: `
+    $("piece-note").innerHTML = howNote(`Against ${opponent ? "Team B's five" : "a league-average lineup"}: `
       + `${cands.length.toLocaleString()} ${which === "any" ? "players at their typical season" : `${seasonLabel(Number(which))} players`} checked with a quick version of the model`
       + `${cap === null ? "" : ` with overall quality ${signed(cap)} or lower`}`
       + `${thin || capped ? ` (${[thin ? `${thin.toLocaleString()} with under ${state.meta.band.thin_possessions} offensive possessions` : "",
                                capped ? `${capped.toLocaleString()} above that quality` : ""].filter(Boolean).join(" and ")} left out)` : ""},`
       + ` and the ${exact.length} most promising given the full forecast.`
-      + `${complete ? "" : ` The search stopped after ${PIECE.most} full forecasts; a candidate the quick check ranked lower could still belong in the top ten.`}`
-      + ` The best candidates are usually close and their ranges`
-      + ` overlap, so treat them as a group of good options rather than a ranking.`
-      + ` ${KEY(opponent)}${current !== null ? " vs current player: each candidate's net minus the current player's." : ""}`;
+      + `${complete ? "" : ` The search stopped after ${PIECE.most} full forecasts; a candidate the quick check ranked lower could still belong in the top ten.`}`,
+      `The best candidates are usually close and their ranges overlap, so treat them as a group of good options rather than a ranking.`
+      + ` ${KEY(opponent)}${current !== null ? " vs current player: each candidate's net minus the current player's." : ""}`);
     // 3. ranges, one row at a time
     for (const x of piece.rows) {
       $("piece-status").textContent = "Adding the ranges";
@@ -1577,11 +1753,11 @@ details.assume { min-width: 0; }
   const sameFive = (a, b) => a.slice().sort().join() === b.slice().sort().join();
   function bestRow(x, k, ref) {
     const P = state.meta.players, full = x.five.map((r) => state.meta.names[String(P.pid[r])]).join(", ");
-    const key = x.current ? "ref" : String(k), what = best.projected ? "the projected five" : "the most-used five";
-    const tag = x.current ? best.label : sameFive(x.five, ref.five) ? what : "";
+    const key = x.current ? "ref" : String(k);
+    const tag = x.current ? best.label : sameFive(x.five, ref.five) ? best.label : "";
     const band = x.band ? `${signed(x.band.low)} to ${signed(x.band.high)}` : `<span class="pending">…</span>`;
     return `<tr class="${x.current ? "now" : ""}${best.used === key ? " used" : ""}"><td class="num">${x.current ? "" : k + 1}</td>
-      <td class="who"><span class="five" title="${escapeHtml(full)}">${fiveNames(x.five, best.pool).map(escapeHtml).join(" · ")}</span>${tag ? ` <span class="s">${escapeHtml(tag)}</span>` : ""}<button type="button" class="use" data-k="${key}" title="Put this five in Team A"${best.used === key ? " disabled" : ""}>${best.used === key ? "In Team A ✓" : "Put in Team A"}</button></td>
+      <td class="who"><div class="who-in"><span><span class="five" title="${escapeHtml(full)}">${fiveNames(x.five, best.pool).map(escapeHtml).join(" · ")}</span>${tag ? ` <span class="s">${escapeHtml(tag)}</span>` : ""}</span><button type="button" class="use" data-k="${key}" title="Put this five in Team A"${best.used === key ? " disabled" : ""}>${best.used === key ? "In Team A ✓" : "Put in Team A"}</button></div></td>
       <td class="num net ${tone(x.f.margin)}">${signed(x.f.margin)}</td><td class="num rng">${band}</td>
       <td class="num od">${fmt(x.f[bsides()[0]])}</td><td class="num od">${fmt(x.f[bsides()[1]])}</td>
       <td class="num cmb">${signed(x.f.learned + x.f.combinations, 2)}</td><td class="num vs">${x.current ? "" : signed(x.f.margin - ref.f.margin)}</td></tr>`;
@@ -1591,9 +1767,9 @@ details.assume { min-width: 0; }
     t.hidden = false;
     const vs = best.projected ? "the projected five" : "the most-used five";
     t.innerHTML = `<thead><tr><th>#</th><th class="who">Five</th>${searchHeads(best.opponent, "The five in the row")}<th class="vs" title="Each five's net minus ${vs}'s">vs ${vs.replace("the ", "")}</th></tr></thead>
-      <tbody>${list.map((x, k) => bestRow(x, k, ref)).join("")}${bestRow(ref, 0, ref)}</tbody>`;
+      <tbody>${list.map((x, k) => bestRow(x, k, ref)).join("")}${list.some((x) => sameFive(x.five, ref.five)) ? "" : bestRow(ref, 0, ref)}</tbody>`;
     const top = list.map((x) => x.f.margin), bands = list.filter((x) => x.band).map((x) => x.band.high - x.band.low);
-    $("best-summary").textContent = `${best.title}.` + (top.length > 1
+    $("best-summary").innerHTML = `<strong>${escapeHtml(best.title)}.</strong>` + (top.length > 1
       ? ` The top ${top.length} are within ${(Math.max(...top) - Math.min(...top)).toFixed(1)} points of each other`
         + (bands.length ? `, and each 80% range is about ${Math.round(bands.reduce((a, b) => a + b, 0) / bands.length)} points wide` : "")
         + ", so the order among them is not certain: treat them as a group of good options." : "");
@@ -1635,12 +1811,12 @@ details.assume { min-width: 0; }
     top(ranked.exact);
     const thin = state.meta.band.thin_possessions;
     $("best-note").hidden = false;
-    $("best-note").textContent = `All ${fives.length.toLocaleString()} fives of these ${n} players were checked with a quick version of the model, and the ${ranked.exact.length} most promising got the full forecast: `
-      + `${fiveNames(roster, roster).join(", ")}. `
-      + (latest ? `They are the players on the roster for the first game of the season who played the most in their latest season, each as of that season; players on two-way contracts (who play mostly in the G League) are left out, and so are rookies, who have no NBA data yet.`
+    $("best-note").innerHTML = howNote(`All ${fives.length.toLocaleString()} fives of these ${n} players were checked with a quick version of the model, and the ${ranked.exact.length} most promising got the full forecast: `
+      + `${fiveNames(roster, roster).join(", ")}.`
+      + `${ranked.complete ? "" : ` The search stopped after ${BEST_MOST} full forecasts; a five the quick check ranked lower could still belong in the top ten.`}`,
+      (latest ? `They are the players on the roster for the first game of the season who played the most in their latest season, each as of that season; players on two-way contracts (who play mostly in the G League) are left out, and so are rookies, who have no NBA data yet.`
                 : `They are the players who played the most for the team that season, each as of that season${entry.thin ? `; ${entry.thin} with under ${thin} offensive possessions are left out` : ""}.`)
-      + `${ranked.complete ? "" : ` The search stopped after ${BEST_MOST} full forecasts; a five the quick check ranked lower could still belong in the top ten.`}`
-      + ` The last row is ${latest ? "the five projected to start the first game of the season" : "the five the team played most that season"}, for comparison; "vs" is each five's net minus that five's. ${KEY(opponent)}`;
+      + ` ${latest ? "The five projected to start the first game of the season" : "The five the team played most that season"} is tagged for comparison, as the last row when it isn't among the best; "vs" is each five's net minus that five's. ${KEY(opponent)}`);
     for (const x of best.rows) {
       $("best-status").textContent = "Adding the ranges";
       const b = await ask(worker, { kind: "band", rows: x.five, rule, opponent, search: `best-${id}` });
@@ -1764,7 +1940,7 @@ details.assume { min-width: 0; }
         if (now - shownAt < 250) return;
         shownAt = now;
         setStatus(`Loading the model: ${(loaded / 1e6).toFixed(1)}${total ? ` of ${(total / 1e6).toFixed(1)}` : ""} MB.`
-          + (loading ? " You can pick players meanwhile; the forecast appears when it has loaded." : ""), true);
+          + (loading ? " Pick players meanwhile; the forecast appears when it has loaded." : ""), true);
         const wait = `The search starts once the model has loaded (${(loaded / 1e6).toFixed(1)}${total ? ` of ${(total / 1e6).toFixed(1)}` : ""} MB so far).`;
         if (!state.ready) { $("piece-status").textContent = wait; $("best-status").textContent = wait; }   // QA 2026-10-19: progress where you are waiting
       };
@@ -1817,7 +1993,7 @@ details.assume { min-width: 0; }
         if (!piece.helpers.length) setTimeout(() => startHelpers(meta, helperWeights, helperPlayers), 0);
         state.warm = true;
         show(m);
-        setStatus("Updated", false);
+        setStatus(state.idleNote, false);
       };
       worker.onerror = (e) => setStatus("The model stopped: " + e.message, false);
       setStatus("Starting the model", true);

@@ -31,11 +31,12 @@
 }
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 * { box-sizing: border-box; }
-html { scroll-padding-top: 16px; }
+html { scroll-padding-top: 24px; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 15.5px/1.6 var(--body); }
-a { color: var(--accent); text-underline-offset: 2px; }
-a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 22px 64px; display: grid; gap: 26px; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 22px 64px; display: grid; gap: 26px; }
 header { display: grid; gap: 8px; }
 .back { font-size: .88rem; }
 h1, h2, h3 { font-family: var(--display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
@@ -48,9 +49,17 @@ p { margin: 0; }
 .layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: 34px; align-items: start; }
 nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 2px; font-size: .88rem; }
 @media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } nav.toc { position: static; } }   /* after the rule it overrides (QA 2026-10-19: the contents covered the text on phones) */
-nav.toc span { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding-bottom: 4px; }
-nav.toc a { color: var(--ink); text-decoration: none; padding: 3px 0 3px 10px; border-left: 2px solid var(--line); }
-nav.toc a:hover { border-left-color: var(--accent); color: var(--accent); }
+nav.toc summary { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding-bottom: 4px; list-style: none; }
+nav.toc summary::-webkit-details-marker { display: none; }
+nav.toc .links { display: grid; gap: 0; }
+nav.toc a { color: var(--ink); text-decoration: none; padding: 4px 0 4px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover, nav.toc a.on { border-left-color: var(--accent); color: var(--accent); }
+@media (max-width: 860px) {   /* phones and tablets: the contents fold into one line (designer QA 2026-10-19: a full screen before any text) */
+  nav.toc details { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 10px 14px; }
+  nav.toc summary { cursor: pointer; padding: 0; font-weight: 600; }
+  nav.toc summary::after { content: " ▾"; }
+  nav.toc details[open] summary { padding-bottom: 8px; }
+}
 main { display: grid; gap: 40px; min-width: 0; }
 section { display: grid; gap: 12px; min-width: 0; }
 ul, ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; }
@@ -72,7 +81,8 @@ table { border-collapse: collapse; font-size: .88rem; min-width: 32rem; }
 th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.terms { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; font-size: .92rem; }
+th.r { font-family: var(--body); }
+.terms { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 6px 16px; font-size: .92rem; }
 .terms dt { font-weight: 600; }
 .terms dd { margin: 0; color: var(--muted); max-width: 62ch; }
 @media (max-width: 560px) { .terms { grid-template-columns: minmax(0, 1fr); } .terms dd { padding-bottom: 6px; } }
@@ -87,8 +97,7 @@ td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: 
   </header>
 
   <div class="layout">
-    <nav class="toc" aria-label="Contents">
-      <span>Contents</span>
+    <nav class="toc" aria-label="Contents"><details id="toc" open><summary>Contents</summary><div class="links">
       <a href="#stack">The stack</a>
       <a href="#data">Data</a>
       <a href="#players">Describing a player</a>
@@ -104,7 +113,7 @@ td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: 
       <a href="#accuracy">Accuracy</a>
       <a href="#limits">What is not checked</a>
       <a href="#about">About this site</a>
-    </nav>
+    </div></details></nav>
 
     <main>
       <section id="stack">
@@ -264,5 +273,26 @@ td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: 
     </main>
   </div>
 </div>
+<script>
+// The contents: folded on narrow screens, open beside the text on wide ones, and marking the section being read.
+(() => {
+  const toc = document.getElementById("toc"), narrow = matchMedia("(max-width: 860px)");
+  const fit = () => { toc.open = !narrow.matches; };
+  fit(); narrow.addEventListener("change", fit);
+  toc.addEventListener("click", (ev) => {
+    if (ev.target.closest("summary") && !narrow.matches) ev.preventDefault();          // beside the text it stays open
+    else if (ev.target.closest("a") && narrow.matches) toc.open = false;
+  });
+  if (!("IntersectionObserver" in window)) return;
+  const links = new Map([...toc.querySelectorAll("a")].map((a) => [a.getAttribute("href").slice(1), a]));
+  const seen = new Map();
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) seen.set(e.target.id, e.isIntersecting);
+    const first = [...links.keys()].find((id) => seen.get(id));
+    if (first) links.forEach((a, id) => a.classList.toggle("on", id === first));
+  }, { rootMargin: "0px 0px -60% 0px" });
+  links.forEach((_, id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+})();
+</script>
 </body>
 </html>

@@ -13,7 +13,9 @@
 //   - at 400 px wide nothing scrolls sideways (SHOT=file.png saves a picture of the search there), and at 375 px both
 //     search tables keep all their columns, scrolling inside their own boxes;
 //   - names resolve forgivingly or explain themselves, the result greys out while a slot is unfinished, Escape brings
-//     back the last player, and a reload keeps the lineup.
+//     back the last player, and a reload keeps the lineup;
+//   - the designer's review (2026-10-19): the result's message line, numbers that hold still while a name is typed,
+//     aligned search buttons, the measured-combinations table, the phone summary bar and the model page's contents.
 // Prints each search's time. Exits 1 if any check failed.
 import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -92,6 +94,8 @@ try {
   const same = (got, team) => JSON.stringify(got) === JSON.stringify(fiveOf(team).map((x) => [meta.names[String(x.pid)], x.season]));
   const opened = await lineup("a");
   check(same(opened, "Minnesota Timberwolves"), `a fresh browser opens on the Timberwolves' projected 2026–27 five, each at his latest season (${opened.map((x) => x[0]).join(", ")})`);
+  const units = await ev(`${$("status")}.textContent`);
+  check(/^Points per 100 possessions/.test(units), `after a forecast the result's message line explains the units ("${units.slice(0, 40)}…"), not "Updated" (designer QA 2026-10-19)`);
   const cap = () => ev(`({ value: ${$("piece-cap")}.value, disabled: ${$("piece-cap")}.disabled, on: ${$("piece-cap-on")}.value })`);
   const find = async () => {
     const t0 = Date.now();
@@ -205,8 +209,13 @@ try {
   await quiet();
   n = await name(3, await ev(`${$("name-a-3")}.value`));
   check(n.value === before3 && !n.stale, `Escape brings back the last player: ${n.value}`);
+  const offset = () => ev(`[${$("metrics")}.getBoundingClientRect().top - ${$("result")}.getBoundingClientRect().top,
+    document.querySelector("#team-a > .presets:not(.team-row)").getBoundingClientRect().top - ${$("team-a")}.getBoundingClientRect().top].map(Math.round).join()`);
+  const before4 = await offset();
   n = await name(4, "Steph", "input");
   check(n.stale && /press Enter/.test(n.status) && await ev(`${$("slot-a-4")}.classList.contains("pending")`), "a half-typed name greys the result until it is finished");
+  const after4 = await offset();
+  check(after4 === before4, `typing it moves neither the numbers nor the rows under the box (${before4} px, then ${after4}; designer QA 2026-10-19)`);
   await ev(`${$("name-a-4")}.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))`);
   await quiet();
   const before = await ev(`[0, 1, 2, 3, 4].map((i) => document.getElementById("name-a-" + i).value).join(", ")`);
@@ -230,6 +239,9 @@ try {
   await quiet();
   await ev(`[...document.querySelectorAll(".preset")].find((b) => b.textContent === "Five Goberts").click()`);
   await quiet();
+  const chips = await ev(`[...document.querySelectorAll("#result #reasons > li > .chip")].map((c) => c.textContent)`);
+  check(chips.length >= 3 && chips.length === new Set(chips).size && chips.includes("unusual lineup"),
+        `five Goberts: the reasons sit in the result card, one badge per kind (${chips.join(", ")}; designer QA 2026-10-19)`);
   const text = await ev(`document.body.innerText`);
   check(!/\d\.\.(\s|$)/.test(text), "no double full stops after numbers");
   await ev(`document.querySelector("details.assume").open = true`);
@@ -279,14 +291,25 @@ try {
   const tBest = Date.now();
   await ev(`${$("best-go")}.click()`);
   await waitFor(`/^(Done in|The search stopped)/.test(${$("best-status")}.textContent)`, 180000);
+  // the reference five: tagged in the list when it is among the best, otherwise the last row (designer QA 2026-10-19)
+  const refRow = (tag) => `[...${$("best-table")}.querySelectorAll("tbody tr")].find((tr) => ${tag}.test(tr.querySelector("td.who").textContent))`;
   const bres = await ev(`({ status: ${$("best-status")}.textContent, rows: ${$("best-table")}.querySelectorAll("tbody tr").length,
-    ref: ${$("best-table")}.querySelector("tbody tr.now td.who")?.textContent, head: [...${$("best-table")}.querySelectorAll("thead th")].map((x) => x.textContent.trim()),
+    last: Boolean(${$("best-table")}.querySelector("tbody tr.now")), ref: ${refRow("/most used/")}?.querySelector("td.who").textContent, head: [...${$("best-table")}.querySelectorAll("thead th")].map((x) => x.textContent.trim()),
     note: ${$("best-note")}.textContent, first: ${$("best-table")}.querySelector("tbody tr:not(.now) .five")?.title,
     pending: ${$("best-table")}.querySelectorAll(".pending").length, summary: ${$("best-summary")}.textContent })`);
   console.log(`  best five: ${bres.status} (${Date.now() - tBest} ms in all); first: ${bres.first}; last row: ${bres.ref}`);
-  check(/^Done in/.test(bres.status) && bres.rows === 11 && /most used/.test(bres.ref) && bres.pending === 0 && bres.head.includes("Combination effects")
+  check(/^Done in/.test(bres.status) && bres.rows === (bres.last ? 11 : 10) && /most used/.test(bres.ref) && bres.pending === 0 && bres.head.includes("Combination effects")
         && bres.head.includes("vs most-used five") && /All 1,287 fives/.test(bres.note) && /against Team B's five \(.+\)\. The top 10 are within/.test(bres.summary),
         `the best five lists ten fives with ranges and the most-used five, and names the opponent (${bres.status}; "${bres.summary}")`);
+  const tagged = await ev(`[...${$("best-table")}.querySelectorAll("tbody td.who")].filter((td) => /most used/.test(td.textContent)).length`);
+  check(tagged === 1, `the most-used five is listed once (${tagged}; designer QA 2026-10-19)`);
+  const rights = await ev(`[...document.querySelectorAll("#best-table tbody .use")].map((b) => Math.round(b.getBoundingClientRect().right))`);
+  check(rights.length === bres.rows && Math.max(...rights) - Math.min(...rights) <= 1, `the best five's "Put in Team A" buttons line up on one edge (designer QA 2026-10-19: ${JSON.stringify([...new Set(rights)])})`);
+  await ev(`${$("library")}.open = true`);
+  const lib = await ev(`(() => { const t = document.querySelector("#library table"), s = t.parentElement;
+    return { cells: [...new Set([...t.querySelectorAll("tbody tr:first-child td")].map((c) => getComputedStyle(c).display))], over: s.scrollWidth - s.clientWidth }; })()`);
+  check(lib.cells.join() === "table-cell" && lib.over <= 1, `the measured-combinations table is a table at 1280 px and fits its box (designer QA 2026-10-19: ${JSON.stringify(lib)})`);
+  await ev(`${$("library")}.open = false`);
   await ev(`${$("best-table")}.querySelector("tbody tr:not(.now) .use").click()`);
   await quiet();
   const usedFive = (await lineup("a")).map((x) => x[0]).sort().join(", ");
@@ -342,11 +365,11 @@ try {
   await ev(`${$("best-go")}.click()`);
   await waitFor(`/^(Done in|The search stopped)/.test(${$("best-status")}.textContent)`, 180000);
   const okc = await ev(`[...document.querySelectorAll("#best-table .five")].map((x) => x.textContent)`);
-  check(okc.length === 11 && !okc.some((x) => /(^| · )Williams( · |$)/.test(x)) && okc.some((x) => /Jalen Williams/.test(x)),
+  check(okc.length >= 10 && !okc.some((x) => /(^| · )Williams( · |$)/.test(x)) && okc.some((x) => /Jalen Williams/.test(x)),
         `players who share a surname are told apart in every row (${okc[0]})`);
-  await ev(`document.querySelector("#best-table tbody tr.now .use").click()`);
+  await ev(`${refRow("/projected starters/")}.querySelector(".use").click()`);
   await quiet();
-  check(await ev(`${$("pick-team-a")}.value`) === "Oklahoma City Thunder" && /In Team A ✓/.test(await ev(`document.querySelector("#best-table tbody tr.now .use").textContent`)),
+  check(await ev(`${$("pick-team-a")}.value`) === "Oklahoma City Thunder" && /In Team A ✓/.test(await ev(`${refRow("/projected starters/")}.querySelector(".use").textContent`)),
         "putting the projected five in Team A names the team in the picker, and the row says it is in Team A");
   await set("pick-team-a", "Boston Celtics", "change");
   await quiet();
@@ -375,6 +398,36 @@ try {
     check(wide.shown === wide.heads && wide.heads === 8 && wide.table > wide.box && wide.page <= 375 && wide.swipe,
           `at 375 px ${id} keeps all its columns and scrolls inside its box, not the page, with a line saying so (Adam, 2026-10-19: ${JSON.stringify(wide)})`);
   }
+  const box = (id) => `(() => { const r = ${$(id)}.getBoundingClientRect(); return { top: Math.round(r.top + scrollY), bottom: Math.round(r.bottom + scrollY), left: Math.round(r.left), right: Math.round(r.right) }; })()`;
+  await ev(`${$("b-mode-average")}.click()`);
+  await quiet();
+  await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await new Promise((ok) => setTimeout(ok, 400));
+  let A = await ev(box("team-a")), B = await ev(box("team-b")), R = await ev(box("result"));
+  check(R.left === B.left && R.top - B.bottom <= 20 && B.bottom - B.top < 180 && R.left > A.right,
+        `at 1440 px a league-average Team B is a slim card right above the result, beside Team A (designer QA 2026-10-19: A ${JSON.stringify(A)}, B ${JSON.stringify(B)}, result ${JSON.stringify(R)})`);
+  const head0 = await ev(box("team-a"));
+  await ev(`document.querySelector("details.rule-help").open = true`);
+  const head1 = await ev(box("team-a"));
+  await ev(`document.querySelector("details.rule-help").open = false`);
+  check(head1.top === head0.top, `opening the levels note moves nothing (Team A at ${head0.top} px, then ${head1.top})`);
+  await send("Emulation.setDeviceMetricsOverride", { width: 820, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await new Promise((ok) => setTimeout(ok, 400));
+  A = await ev(box("team-a")); R = await ev(box("result"));
+  check(R.left > A.right && Math.abs(R.top - A.top) <= 2, `at 820 px the result sits beside Team A (designer QA 2026-10-19: A ${JSON.stringify(A)}, result ${JSON.stringify(R)})`);
+  await send("Emulation.setDeviceMetricsOverride", { width: 375, height: 812, deviceScaleFactor: 2, mobile: true });
+  await new Promise((ok) => setTimeout(ok, 400));
+  await ev(`window.scrollTo(0, document.body.scrollHeight)`);
+  await new Promise((ok) => setTimeout(ok, 400));
+  const mini = await ev(`({ shown: !${$("mini")}.hidden, height: ${$("mini")}.offsetHeight, text: ${$("mini-text")}.textContent,
+    button: getComputedStyle(document.querySelector("#mini a")).backgroundColor !== "rgba(0, 0, 0, 0)" })`);
+  check(mini.shown && mini.height <= 72 && mini.button, `on a phone the summary bar is one compact block with a filled button (${mini.height} px: "${mini.text}"; designer QA 2026-10-19)`);
+  await send("Page.navigate", { url: `${site}/model.html` });
+  await waitFor(`document.readyState === "complete" && document.getElementById("toc")`);
+  const folded = await ev(`!document.getElementById("toc").open`);
+  await send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+  await new Promise((ok) => setTimeout(ok, 300));
+  check(folded && await ev(`document.getElementById("toc").open`), "the model page's contents fold on a phone and stay open beside the text on a wide screen (designer QA 2026-10-19)");
   check(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 } catch (err) {
   check(false, String(err && err.stack || err));

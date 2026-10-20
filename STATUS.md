@@ -7,8 +7,8 @@ reports linked below and in git history.
 ## Live
 
 - **The tool:** https://lineuplab.dev (and www). It is shared with friends first.
-  - **What runs it:** an assets-only Cloudflare Worker, `lineuplab`, at version 41a4f023,
-    built from `paths.CLEAN/site_2026_10_20_wide4`.
+  - **What runs it:** an assets-only Cloudflare Worker, `lineuplab`, at version c5828f6b,
+    built from `paths.CLEAN/site_2026_10_20_design`.
   - **Find the best five** (Adam, 2026-10-19; live). It tries every five of a team-season's roster
     against Team B's five or a league-average lineup.
     - **Rosters:** `scripts/team_seasons.py` (747 team-seasons) and the opening-night rosters.
@@ -18,6 +18,10 @@ reports linked below and in git history.
       ([report](reports/qa_personas_2026_10_20.md)).
   - **On phones** both search tables keep every column and scroll sideways, with the rank and
     the names held in place (Adam, 2026-10-19).
+  - **Designer review** (Adam, 2026-10-19): one design-focused tester, two rounds, two fix passes.
+    The result card was rebuilt (labelled range strips, the equation, the reasons inside it), the
+    layout has no gaps at any width, and the text is cut down
+    ([report](reports/qa_designer_2026_10_20.md)). Deferred: custom name suggestions.
   - **Missing-piece search** (2026-10-19):
     - "At most" the replaced player's overall quality is the default (Adam);
     - candidates can be any one season's players, starting at the replaced player's season (a
@@ -35,17 +39,19 @@ reports linked below and in git history.
       then rebuild, check and deploy.
     - **The example buttons** no longer include the three 2025–26 teams.
   - **To rebuild:** `tool/build_lineups.py --site --out DIR`, then
-    `node scripts/page_check.mjs DIR index.html` (60 checks).
+    `node scripts/page_check.mjs DIR index.html` (71 checks).
   - **To redeploy:** the command in `tool/wrangler.jsonc`. Wrangler is signed in to Adam's
     account on this laptop.
 - **The code:** https://github.com/adamwlev/lineuplab, public, MIT licence, with a fresh
-  history (first commit 753f774).
+  history (first commit 753f774). Last updated 2026-10-19 to this repository's 1ac49849
+  (public commit 0d8ae82).
   - **To update it:** run `scripts/publish_repo.sh ../lineuplab "message"`, read the commit,
     then push with Adam's go-ahead.
-  - **What stays private:** the downloader, the golden fixtures and `tool/five.html`.
+  - **What stays private:** the downloader, the golden fixtures, `tool/five.html` and the
+    2026–27 roster file.
   - **This repository stays private** because of its history: it holds the old database
     password, scraped caches and a personal email.
-- **The private review copy:** https://claude.ai/artifact/WC4QmzeJshrnneQ4HXzk8G, version 21,
+- **The private review copy:** https://claude.ai/artifact/WC4QmzeJshrnneQ4HXzk8G, version 22,
   matching the site. Republishing it is pre-approved; list its files before each publish.
 
 The record of the launch, covering decisions, hosting, open source, Sports Reference and the
@@ -172,7 +178,7 @@ results.
 | Clean rebuild root (`paths.CLEAN`) | `experiments/cache/rebuild_pages_2026_10_14/experiments/cache/` |
 | The refresh (under `paths.CLEAN`): history refits; record; band constants; overall quality; export; comparison | `history_2026_10_16/`; `prospective_2027q1/release_record_refresh.json`; `band_constants_refresh.json`; `player_values_refresh/`; `release_export_refresh/`; `compare_refresh/` |
 | Refresh logs and failed partial outputs | `paths.CLEAN/logs/refresh_*.log`; `paths.CLEAN/logs/refresh_failed_2026_10_18/` |
-| Site and review builds | `paths.CLEAN/site_2026_10_20_wide4/` (live); `paths.CLEAN/review_page_2026_10_20_wide4/` (review copy v21) |
+| Site and review builds | `paths.CLEAN/site_2026_10_20_design/` (live); `paths.CLEAN/review_page_2026_10_20_design/` (review copy v22) |
 | Team-season rosters (the best five) | `paths.CLEAN/team_seasons_2026_10_20/team_seasons.json` |
 | Persona round 3 builds, findings, screenshots | `experiments/cache/qa_2026_10_20/` |
 | 2026–27 roster templates as fetched | `experiments/cache/rosters_2026_10_19/` (21:15 UTC); `rosters_2026_10_19_first/` (21:09, identical) |

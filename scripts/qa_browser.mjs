@@ -19,6 +19,8 @@
 //   node scripts/qa_browser.mjs PERSONA select SELECTOR VALUE | --label "OPTION TEXT"
 //   node scripts/qa_browser.mjs PERSONA scroll SELECTOR | --text "VISIBLE TEXT" | --y PIXELS
 //   node scripts/qa_browser.mjs PERSONA wait SECONDS           (at most 300)
+//   node scripts/qa_browser.mjs PERSONA viewport WxH [--mobile]  a new screen size (and touch), keeping the page
+//   node scripts/qa_browser.mjs PERSONA scheme light | dark     the system theme the page sees (prefers-color-scheme)
 //   node scripts/qa_browser.mjs PERSONA back | forward | reload | status | errors
 //   node scripts/qa_browser.mjs PERSONA eval "JS"              diagnosis only
 //   node scripts/qa_browser.mjs PERSONA stop                   always, when done: frees the browser
@@ -134,7 +136,7 @@ async function send(persona, cmd, args) {
 
 // ---- the daemon: static server, Chrome, CDP ---------------------------------------------------------------
 async function daemon(persona, opts) {
-  const TYPES = { ".html": "text/html; charset=utf-8", ".json": "application/json", ".txt": "text/plain" };
+  const TYPES = { ".html": "text/html; charset=utf-8", ".json": "application/json", ".txt": "text/plain", ".png": "image/png", ".svg": "image/svg+xml" };
   const HOME = fs.existsSync(path.join(opts.build, "index.html")) ? "index.html" : "lineups.html";   // a --site build's page
   const gz = new Map();
   const site = http.createServer((req, res) => {                // gzip, with revalidation, like a typical host
@@ -142,11 +144,11 @@ async function daemon(persona, opts) {
     if (name === "favicon.ico") { res.writeHead(204); res.end(); return; }      // the host supplies the icon
     const file = path.join(opts.build, name);
     if (!file.startsWith(opts.build) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end("not found"); return; }
-    if (!gz.has(file)) gz.set(file, zlib.gzipSync(fs.readFileSync(file)));
-    const etag = `"${fs.statSync(file).mtimeMs}"`;
+    const etag = `"${fs.statSync(file).mtimeMs}"`, key = file + etag;     // a rebuilt file is served fresh
+    if (!gz.has(key)) gz.set(key, zlib.gzipSync(fs.readFileSync(file)));
     if (req.headers["if-none-match"] === etag) { res.writeHead(304, { etag }); res.end(); return; }
     const zipped = /gzip/.test(req.headers["accept-encoding"] || "");
-    const body = zipped ? gz.get(file) : fs.readFileSync(file);
+    const body = zipped ? gz.get(key) : fs.readFileSync(file);
     res.writeHead(200, { "content-type": TYPES[path.extname(file)] || "application/octet-stream", "content-length": body.length,
                          "cache-control": "no-cache", etag, ...(zipped ? { "content-encoding": "gzip" } : {}) });
     res.end(body);
@@ -154,7 +156,7 @@ async function daemon(persona, opts) {
   await new Promise((ok) => site.listen(0, "127.0.0.1", ok));
   const origin = `http://127.0.0.1:${site.address().port}`;
 
-  const [w, h] = opts.viewport.split("x").map(Number);
+  let [w, h] = opts.viewport.split("x").map(Number);
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "qa-browser-"));
   const chrome = spawn(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--no-first-run",
                                 "--disable-gpu", `--window-size=${w},${h}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
@@ -347,6 +349,20 @@ async function daemon(persona, opts) {
       else if (f._[0] || f.text) await at(f._[0], f.text);
       else throw new Error("scroll needs a selector, --text \"VISIBLE TEXT\" or --y PIXELS");
       return `Scrolled; the window's top is at ${await evaluate("Math.round(scrollY)")} px of ${await evaluate("document.documentElement.scrollHeight")}.`;
+    },
+    async viewport([size, ...rest]) {     // the designer persona (2026-10-19) compares desktop and phone in one session
+      const f = flags(rest), m = /^(\d+)x(\d+)$/.exec(size || "");
+      if (!m) throw new Error("usage: viewport WIDTHxHEIGHT [--mobile]");
+      [w, h] = [Number(m[1]), Number(m[2])];
+      await cdp("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: f.mobile ? 2 : 1, mobile: Boolean(f.mobile) });
+      await cdp("Emulation.setTouchEmulationEnabled", { enabled: Boolean(f.mobile), maxTouchPoints: 5 });
+      opts.viewport = size;
+      return `The screen is now ${size}${f.mobile ? ", a phone" : ""}.`;
+    },
+    async scheme([value]) {
+      if (!["light", "dark"].includes(value)) throw new Error("usage: scheme light | dark");
+      await cdp("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value }] });
+      return `The page now sees a ${value} system theme.`;
     },
     async wait([s = "2"]) { await sleep(Math.min(Number(s), 300) * 1000); return `Waited ${Math.min(Number(s), 300)} s.`; },
     async back() {
