@@ -1100,6 +1100,8 @@
     }
     const forecast = (rows, rule, opponent, v) => (opponent ? matchupOf(rows, opponent, rule, v) : forecastOf(rows, rule, v));
     const screen = (core, candidates, rule, v, opponent) => candidates.map((c) => forecast([...core, c], rule, opponent, v || SCREEN).margin);
+    // The best five (Adam, 2026-10-19): the same screen for whole lineups, such as every five from one team's roster.
+    const screenFives = (fives, rule, opponent, v) => fives.map((f) => forecast(f, rule, opponent, v || SCREEN).margin);
     // The range the main result shows for a lineup (against the average opponent or one five), without the
     // breakdowns it also draws.
     function bandOf(rows, rule, opponent) {
@@ -1166,7 +1168,7 @@
 
     return { meta, row, seasonsOf, defaultSeason: (p) => meta.defaults[String(p)], name: (p) => meta.names[String(p)],
              points, ratings, matchup, nativeBySeed, profile,
-             search: { screen, forecast: (rows, rule, opponent) => forecast(rows, rule, opponent, null), band: bandOf, view, warm, memo },
+             search: { screen, screenFives, forecast: (rows, rule, opponent) => forecast(rows, rule, opponent, null), band: bandOf, view, warm, memo },
              band: { lineup: bandLineup, matchup: bandMatchup },
              learned: { lineup: learnedRatings, matchup: learnedMatchup, points: learnedPoints },
              explain: { lineup: explainLineup, against: explainAgainst },

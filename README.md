@@ -6,7 +6,8 @@ Claude Code. MIT licence ([LICENSE](LICENSE)). Questions and bug reports are wel
 **No data is included.** The model is trained on play-by-play from
 [Basketball Reference](https://www.basketball-reference.com/) (Sports Reference LLC), which is
 not redistributed here. The scripts that downloaded it, the golden test fixtures (rows derived
-from it) and the retired `tool/five.html` page are not in the public repository
+from it), the retired `tool/five.html` page and the 2026–27 roster file (its starts come from the
+play-by-play) are not in the public repository
 (`scripts/publish_repo.sh` lists what is left out). Most scripts and tests need that local data,
 so this repository is for reading and reuse rather than a one-command rebuild.
 

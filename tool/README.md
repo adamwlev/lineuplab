@@ -18,6 +18,19 @@ and it shows:
   (pairings, what adding up implies, event change, points, evidence, and a
   curve for same-type effects);
 - a library of all 12 measured combinations;
+- **Find the best five** (Adam, 2026-10-19). It tries every five of a team-season's roster against
+  Team B's five or a league-average lineup:
+  - rosters come from `scripts/team_seasons.py` for past seasons (the 13 players with the most
+    possessions for the team) and from the opening-night rosters for 2026–27;
+  - the ranking is shared with the missing piece (`rankFives` in the page);
+  - `scripts/best_five_check.js` checks its stop rule against exhaustive exact forecasts;
+  - the five the team played most (or its projected starters) is the reference row;
+- a **2026–27 team** picker (Adam, 2026-10-19). It loads a team's projected opening-night five:
+  - the latest published projections (`STARTERS` in `scripts/rosters_2026_27.py`, with sources), checked
+    against Wikipedia's opening-night rosters;
+  - a stand-in for a rookie, who has no NBA data, and the slot says so;
+  - written to `tool/rosters_2026_27.json`. The build embeds the fives and checks that every player-season is in
+  the release. A fresh browser opens on the Timberwolves';
 - an 80% range, with the reasons it widens;
 - the capacity-defense and combinations-keep-adding alternatives;
 - a breakdown of how the offense gets its points;
@@ -32,12 +45,13 @@ and it shows:
   candidate for the fifth spot. The opponent is a league-average lineup or
   Team B's five (Adam: "optionally allow the user to specify a specific
   lineup"). The page says league average is the slower search, because it
-  averages 561 opponents. Candidates are 2025–26 players, or every player at
-  his default season, with at least 500 offensive possessions. An optional
-  limit on overall quality (Adam, 2026-10-18: realistic trade targets, "they
-  don't want to see Wemby come up every time") leaves out candidates whose
-  net linear-approximation value is above it; it starts at the replaced
-  player's value. It works in two steps:
+  averages 561 opponents. Candidates are one season's players, starting at the
+  replaced player's season (a friend's request, 2026-10-19), or every player at
+  his default season, with at least 500 offensive possessions. A limit on
+  overall quality (Adam, 2026-10-18: realistic trade targets, "they don't
+  want to see Wemby come up every time") leaves out candidates whose net
+  linear-approximation value is above it. It is on by default, at the
+  replaced player's value (Adam, 2026-10-19), and "Any" turns it off. It works in two steps:
   1. a screen ranks every candidate with one network per seed and 10 panel
      lineups a side (`search.screen`);
   2. the best get the exact forecast (`search.forecast`, the band's point),

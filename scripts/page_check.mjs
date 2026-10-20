@@ -10,7 +10,8 @@
 //   - a typed limit is used as typed; an impossible or empty one is refused with a message;
 //   - the replaced player-season is listed once, as the "now" row;
 //   - against Team B the combinations column says it holds both teams' effects;
-//   - at 400 px wide nothing scrolls sideways (SHOT=file.png saves a picture of the search there);
+//   - at 400 px wide nothing scrolls sideways (SHOT=file.png saves a picture of the search there), and at 375 px both
+//     search tables keep all their columns, scrolling inside their own boxes;
 //   - names resolve forgivingly or explain themselves, the result greys out while a slot is unfinished, Escape brings
 //     back the last player, and a reload keeps the lineup.
 // Prints each search's time. Exits 1 if any check failed.
@@ -84,6 +85,13 @@ try {
   const $ = (x) => `document.getElementById(${JSON.stringify(x)})`;
   const set = (x, value, event) => ev(`(() => { const e = ${$(x)}; e.value = ${JSON.stringify(value)}; e.dispatchEvent(new Event(${JSON.stringify(event)})); })()`);
   const shown = (slot) => ev(`Number(${$(`pvalue-a-${slot}`)}.querySelector("strong").textContent.replace("−", "-"))`);
+  // 2026–27 teams (scripts/rosters_2026_27.py): a fresh browser opens on the default team's projected five
+  const rosters = JSON.parse(readFileSync(new URL("../tool/rosters_2026_27.json", import.meta.url), "utf8"));
+  const fiveOf = (team) => rosters.teams.find((t) => t.team === team).five;
+  const lineup = (side) => ev(`[0, 1, 2, 3, 4].map((i) => [document.getElementById("name-${side}-" + i).value, Number(document.getElementById("season-${side}-" + i).value)])`);
+  const same = (got, team) => JSON.stringify(got) === JSON.stringify(fiveOf(team).map((x) => [meta.names[String(x.pid)], x.season]));
+  const opened = await lineup("a");
+  check(same(opened, "Minnesota Timberwolves"), `a fresh browser opens on the Timberwolves' projected 2026–27 five, each at his latest season (${opened.map((x) => x[0]).join(", ")})`);
   const cap = () => ev(`({ value: ${$("piece-cap")}.value, disabled: ${$("piece-cap")}.disabled, on: ${$("piece-cap-on")}.value })`);
   const find = async () => {
     const t0 = Date.now();
@@ -98,22 +106,24 @@ try {
   const names = (rows) => rows.map((r) => `${meta.names[String(meta.players.pid[r])]} ${quality("relative", r).toFixed(1)}`).join(", ");
 
   let c = await cap(), q5 = await shown(4);
-  check(c.on === "any" && c.disabled, `the limit starts off (${JSON.stringify(c)})`);
+  check(c.on === "most" && !c.disabled, `the limit starts on, "At most" (${JSON.stringify(c)})`);   // Adam, 2026-10-19
   check(Math.abs(Number(c.value) - q5) < 0.051, `it starts at slot 5's overall quality (${c.value} vs ${q5})`);
 
   let r = await find();
-  console.log(`  any: ${r.status}; ${r.rows.length} listed: ${names(r.rows)}`);
-  check(r.head.includes("Combinations") && /inside the net\./.test(r.note), "against a league-average lineup the column is Combinations, in the net");
-  const best = Math.max(...r.rows.map((x) => quality("relative", x)));
-
-  await set("piece-cap-on", "most", "change");
-  c = await cap();
-  check(!c.disabled, "choosing At most enables the number");
-  r = await find();
   console.log(`  at most ${c.value}: ${r.status}; ${names(r.rows)}`);
   check(r.rows.length > 0 && r.rows.every((x) => quality("relative", x) <= q5 + 0.051), "every listed candidate is at or under the limit");
   check(/with overall quality [+−]\d+\.\d or lower/.test(r.note) && /above that quality left out/.test(r.note), `the note says so: "${r.note.slice(0, 160)}…"`);
+
+  await set("piece-cap-on", "any", "change");
+  c = await cap();
+  check(c.disabled, "choosing Any turns the number off");
+  r = await find();
+  console.log(`  any: ${r.status}; ${r.rows.length} listed: ${names(r.rows)}`);
+  check(r.head.includes("Combination effects") && r.head.includes("Scored") && /play differently together\./.test(r.note), "against a league-average lineup the columns are in plain words (Net, Scored, Allowed, Combination effects)");
+  const best = Math.max(...r.rows.map((x) => quality("relative", x)));
   console.log(`  without the limit the best listed quality was ${best.toFixed(1)}; the limit was ${c.value}`);
+  await set("piece-cap-on", "most", "change");
+  check(!(await cap()).disabled, "choosing At most again enables the number");
 
   await set("piece-cap", "0", "input");
   r = await find();
@@ -153,8 +163,8 @@ try {
   await set("piece-slot", "4", "change");
   check(await ev(`${$("piece-against")}.value === "b"`), "picking Team B's five switches the search to it");
   r = await find();
-  check(r.head.includes("Combinations, both teams") && /Team A's minus Team B's/.test(r.note) && /compare rows, not signs/.test(r.note),
-        `against Team B the column is "Combinations, both teams" and the note explains it (${r.status})`);
+  check(r.head.includes("Combination effects") && /minus the effects for Team B's five/.test(r.note) && /for comparing the rows/.test(r.note),
+        `against Team B the note says the combination effects are both teams' and are for comparing rows (${r.status})`);
 
   await set("piece-cap-on", "most", "change");
   await send("Emulation.setDeviceMetricsOverride", { width: 400, height: 900, deviceScaleFactor: 2, mobile: true });
@@ -188,12 +198,13 @@ try {
   await quiet();
   n = await name(2, await ev(`${$("name-a-2")}.value`));
   check(/Curry/.test(n.value) && !n.stale && !n.warn, `picking a suggestion fills the slot: ${n.value}`);
+  const before3 = await ev(`${$("name-a-3")}.value`);
   n = await name(3, "<img src=x onerror=alert(1)>");
   check(/No player matches/.test(n.msg) && n.stale && n.warn, `junk is refused with a message: "${n.msg.slice(0, 60)}"`);
   await ev(`${$("name-a-3")}.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))`);
   await quiet();
   n = await name(3, await ev(`${$("name-a-3")}.value`));
-  check(n.value === "Anthony Edwards" && !n.stale, `Escape brings back the last player: ${n.value}`);
+  check(n.value === before3 && !n.stale, `Escape brings back the last player: ${n.value}`);
   n = await name(4, "Steph", "input");
   check(n.stale && /press Enter/.test(n.status) && await ev(`${$("slot-a-4")}.classList.contains("pending")`), "a half-typed name greys the result until it is finished");
   await ev(`${$("name-a-4")}.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))`);
@@ -224,10 +235,146 @@ try {
   await ev(`document.querySelector("details.assume").open = true`);
   const fits = await ev(`[...document.querySelectorAll("#below .scroll")].map((s) => s.scrollWidth - s.clientWidth)`);
   check(fits.every((x) => x <= 1), `the range and breakdown tables fit at 1280 px (overflow ${JSON.stringify(fits)})`);
+  const teams = await ev(`[...${$("pick-team-a")}.options].map((o) => o.value).filter(Boolean)`);
+  check(teams.length === 30, `the 2026–27 team picker lists ${teams.length} teams`);
+  await set("pick-team-a", "Los Angeles Lakers", "change");
+  await quiet();
+  const lakers = await lineup("a");
+  check(same(lakers, "Los Angeles Lakers") && await ev(`${$("pick-team-a")}.value`) === "Los Angeles Lakers", `picking the Lakers loads their projected five, and the picker names them (${lakers.map((x) => x[0]).join(", ")})`);
+  await set("name-a-0", "LeBron James", "change");
+  await quiet();
+  check(await ev(`${$("pick-team-a")}.value`) === "", "changing a player clears the picker's team");
+  await set("pick-team-a", "Golden State Warriors", "change");
+  await quiet();
+  const gsw = fiveOf("Golden State Warriors"), k = gsw.findIndex((x) => x.stands_in_for);
+  const standIn = await ev(`${$(`msg-a-${k}`)}.textContent`);
+  check(k >= 0 && same(await lineup("a"), "Golden State Warriors") && standIn.includes(`In place of ${gsw[k].stands_in_for}`),
+        `a rookie starter's stand-in says so: "${standIn}"`);
+  // the candidates start at the season of the player being replaced (2016–17 Warriors: 2016–17 players)
+  await ev(`[...document.querySelectorAll("#team-a .preset")].find((b) => b.textContent === "Warriors 2016–17").click()`);
+  await quiet();
+  await set("piece-slot", "4", "change");
+  const pool = await ev(`${$("piece-pool")}.value`);
+  await set("piece-cap-on", "any", "change");
+  r = await find();
+  const seasonsListed = [...new Set(r.rows.map((x) => meta.players.season[x]))];
+  check(pool === "2017" && r.rows.length > 0 && seasonsListed.join() === "2017" && /2016–17 players checked/.test(r.note),
+        `replacing a 2016–17 player searches 2016–17 players (${pool}; ${r.status}; ${names(r.rows.slice(0, 3))})`);
+  await set("piece-pool", "2008", "change");
+  await set("piece-slot", "3", "change");
+  r = await find();
+  check(await ev(`${$("piece-pool")}.value`) === "2008" && r.rows.every((x) => meta.players.season[x] === 2008),
+        `a season the viewer picks stays picked (${r.status})`);
+  await set("piece-cap-on", "most", "change");
+  if (!await ev(`!!${$("pick-team-b")}`)) { await ev(`${$("b-mode-five")}.click()`); await quiet(); }
+  await set("pick-team-b", "Boston Celtics", "change");
+  await quiet();
+  const celtics = await lineup("b");
+  check(same(celtics, "Boston Celtics") && !await ev(`document.getElementById("status").classList.contains("busy")`), `Team B can load a team too (${celtics.map((x) => x[0]).join(", ")})`);
+  // the best five (Adam, 2026-10-19): every five of a team-season against Team B's five (the Celtics, loaded above)
+  check(await ev(`${$("best-team")}.value`) === "Minnesota Timberwolves" && /start of season/.test(await ev(`${$("best-season")}.selectedOptions[0].textContent`))
+        && await ev(`${$("best-against")}.value`) === "b", "the best five starts at the 2026–27 Timberwolves, against Team B's five");
+  await set("best-season", "2017", "change");
+  await set("best-team", "Cleveland Cavaliers", "change");
+  const tBest = Date.now();
+  await ev(`${$("best-go")}.click()`);
+  await waitFor(`/^(Done in|The search stopped)/.test(${$("best-status")}.textContent)`, 180000);
+  const bres = await ev(`({ status: ${$("best-status")}.textContent, rows: ${$("best-table")}.querySelectorAll("tbody tr").length,
+    ref: ${$("best-table")}.querySelector("tbody tr.now td.who")?.textContent, head: [...${$("best-table")}.querySelectorAll("thead th")].map((x) => x.textContent.trim()),
+    note: ${$("best-note")}.textContent, first: ${$("best-table")}.querySelector("tbody tr:not(.now) .five")?.title,
+    pending: ${$("best-table")}.querySelectorAll(".pending").length, summary: ${$("best-summary")}.textContent })`);
+  console.log(`  best five: ${bres.status} (${Date.now() - tBest} ms in all); first: ${bres.first}; last row: ${bres.ref}`);
+  check(/^Done in/.test(bres.status) && bres.rows === 11 && /most used/.test(bres.ref) && bres.pending === 0 && bres.head.includes("Combination effects")
+        && bres.head.includes("vs most-used five") && /All 1,287 fives/.test(bres.note) && /against Team B's five \(.+\)\. The top 10 are within/.test(bres.summary),
+        `the best five lists ten fives with ranges and the most-used five, and names the opponent (${bres.status}; "${bres.summary}")`);
+  await ev(`${$("best-table")}.querySelector("tbody tr:not(.now) .use").click()`);
+  await quiet();
+  const usedFive = (await lineup("a")).map((x) => x[0]).sort().join(", ");
+  check(usedFive === bres.first.split(", ").sort().join(", ") && (await lineup("a")).every((x) => x[1] === 2017), `Use puts that five, as of 2016–17, in Team A (${usedFive})`);
+  check(/is now Team A: see the forecast/.test(await ev(`${$("best-status")}.textContent`)), "Put in Team A says what it did, with a link to the forecast");
+  await set("pick-team-b", "Denver Nuggets", "change");
+  await quiet();
+  check(await ev(`${$("best")}.classList.contains("stale")`) && /find again/.test(await ev(`${$("best-status")}.textContent`)), "a new Team B greys the best-five list");
+  await set("best-against", "average", "change");
+  check(/slower search/.test(await ev(`${$("best-hint")}.textContent`)), "against a league-average lineup the hint says it is slower");
+  await set("best-against", "b", "change");
+  // from a league-average search, Team A plays a league-average lineup too; Choose a five brings Team B's five back
+  const teamBBefore = (await lineup("b")).map((x) => x[0]).join(", ");
+  await set("best-against", "average", "change");
+  await ev(`${$("best-go")}.click()`);
+  await waitFor(`/^(Done in|The search stopped)/.test(${$("best-status")}.textContent)`, 180000);
+  const avgRow = await ev(`Number(${$("best-table")}.querySelector("tbody tr:not(.now) td.net").firstChild.textContent.replace("−", "-"))`);
+  await ev(`${$("best-table")}.querySelector("tbody tr:not(.now) .use").click()`);
+  await quiet();
+  const mainNet = await ev(`Number(document.querySelector("#mini-text strong").textContent.replace("−", "-"))`);
+  check(Math.abs(mainNet - avgRow) < 0.051 && await ev(`${$("b-mode-average")}.getAttribute("aria-pressed")`) === "true",
+        `after a league-average search, the main result plays a league-average lineup too (${avgRow} in the list, ${mainNet} above)`);
+  await ev(`${$("b-mode-five")}.click()`);
+  await quiet();
+  check((await lineup("b")).map((x) => x[0]).join(", ") === teamBBefore, `Choose a five brings Team B's five back (${teamBBefore})`);
+  await ev(`${$("b-mode-average")}.click()`);
+  await quiet();
+  await set("best-against", "b", "change");
+  await ev(`${$("best-go")}.click()`);
+  check(await ev(`${$("best-status")}.querySelectorAll("button[data-act]").length`) === 2, "Find against Team B with no five for Team B offers the two ways on, beside Find");
+  await ev(`${$("best-status")}.querySelector("button[data-act=five]").click()`);
+  await quiet();
+  // the breaker's cases (QA 2026-10-19)
+  await ev(`[...document.querySelectorAll("#team-b .preset")].find((b) => b.textContent === "Five Jokićs").click()`);
+  await quiet();
+  await ev(`${$("b-mode-average")}.click()`);
+  await quiet();
+  await ev(`${$("b-mode-five")}.click()`);
+  await quiet();
+  check((await lineup("b")).every((x) => x[0] === "Nikola Jokić"), "League average and back keeps the five Team B had (five Jokićs)");
+  await set("name-b-3", "", "change");
+  await quiet();
+  await set("best-against", "b", "change");
+  await ev(`${$("best-go")}.click()`);
+  check(/Fix Team B above/.test(await ev(`${$("best-status")}.textContent`)) && /empty or unrecognized/.test(await ev(`${$("best-hint")}.textContent`)),
+        "a Team B with an empty slot is not searched, and the hint says why");
+  await ev(`${$("b-mode-five")}.click()`);
+  await ev(`[...document.querySelectorAll("#team-b .preset")].find((b) => b.textContent === "Warriors 2016–17").click()`);
+  await quiet();
+  // players who share a surname are told apart across the table; a searched projected five names its team in the picker
+  await set("best-season", "2027", "change");
+  await set("best-team", "Oklahoma City Thunder", "change");
+  await ev(`${$("best-go")}.click()`);
+  await waitFor(`/^(Done in|The search stopped)/.test(${$("best-status")}.textContent)`, 180000);
+  const okc = await ev(`[...document.querySelectorAll("#best-table .five")].map((x) => x.textContent)`);
+  check(okc.length === 11 && !okc.some((x) => /(^| · )Williams( · |$)/.test(x)) && okc.some((x) => /Jalen Williams/.test(x)),
+        `players who share a surname are told apart in every row (${okc[0]})`);
+  await ev(`document.querySelector("#best-table tbody tr.now .use").click()`);
+  await quiet();
+  check(await ev(`${$("pick-team-a")}.value`) === "Oklahoma City Thunder" && /In Team A ✓/.test(await ev(`document.querySelector("#best-table tbody tr.now .use").textContent`)),
+        "putting the projected five in Team A names the team in the picker, and the row says it is in Team A");
+  await set("pick-team-a", "Boston Celtics", "change");
+  await quiet();
+  check(!(await ev(`${$("best-table")}.querySelector("tbody tr.used")`)) && !/is now Team A/.test(await ev(`${$("best-status")}.textContent`)),
+        "a Team A changed another way clears the list's In Team A row and message");
+  await set("best-season", "2026", "change");
+  await set("best-team", "Utah Jazz", "change");
+  await ev(`${$("best-go")}.click()`);
+  await ev(`document.querySelector("#best-table tbody tr:not(.now) .use")?.click()`);    // the old list, while the new one runs
+  await set("best-team", "Miami Heat", "change");
+  await new Promise((ok) => setTimeout(ok, 3000));
+  check(await ev(`${$("best")}.classList.contains("stale")`) && /Click Find to search again/.test(await ev(`${$("best-status")}.textContent`)),
+        `a new team mid-search cancels the search and keeps the list grey ("${await ev(`${$("best-status")}.textContent`)}")`);
   await send("Emulation.setDeviceMetricsOverride", { width: 375, height: 812, deviceScaleFactor: 2, mobile: true });
   await new Promise((ok) => setTimeout(ok, 400));
   const seasons = await ev(`[0, 1, 2, 3, 4].map((i) => { const s = document.getElementById("season-a-" + i); return s.scrollWidth - s.clientWidth; })`);
   check(seasons.every((x) => x <= 0), `season boxes are not clipped at 375 px (${JSON.stringify(seasons)})`);
+  await ev(`${$("best-go")}.click()`);                         // both searches at phone width: the Heat, and the missing piece
+  await waitFor(`/^(Done in|The search stopped)/.test(${$("best-status")}.textContent)`, 180000);
+  await find();
+  for (const id of ["best-table", "piece-table"]) {
+    const wide = await ev(`(() => { const t = ${$(id)}, s = t.parentElement;
+      return { shown: [...t.querySelectorAll("thead th")].filter((h) => getComputedStyle(h).display !== "none").length,
+               heads: t.querySelectorAll("thead th").length, table: s.scrollWidth, box: s.clientWidth, page: document.documentElement.scrollWidth,
+               swipe: getComputedStyle(s.previousElementSibling).display !== "none" }; })()`);
+    check(wide.shown === wide.heads && wide.heads === 8 && wide.table > wide.box && wide.page <= 375 && wide.swipe,
+          `at 375 px ${id} keeps all its columns and scrolls inside its box, not the page, with a line saying so (Adam, 2026-10-19: ${JSON.stringify(wide)})`);
+  }
   check(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 } catch (err) {
   check(false, String(err && err.stack || err));

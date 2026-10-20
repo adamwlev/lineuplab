@@ -7,10 +7,35 @@ reports linked below and in git history.
 ## Live
 
 - **The tool:** https://lineuplab.dev (and www). It is shared with friends first.
-  - **What runs it:** an assets-only Cloudflare Worker, `lineuplab`, at version 35f470a8,
-    built from `paths.CLEAN/site_2026_10_19_github`.
+  - **What runs it:** an assets-only Cloudflare Worker, `lineuplab`, at version 41a4f023,
+    built from `paths.CLEAN/site_2026_10_20_wide4`.
+  - **Find the best five** (Adam, 2026-10-19; live). It tries every five of a team-season's roster
+    against Team B's five or a league-average lineup.
+    - **Rosters:** `scripts/team_seasons.py` (747 team-seasons) and the opening-night rosters.
+    - **Stop rule:** checked by `scripts/best_five_check.js`.
+    - **Persona round 3:** five testers and two fix passes before it shipped (Adam). Of 36
+      re-checked findings, 30 were fixed and 6 partly; the rest were fixed in a second pass
+      ([report](reports/qa_personas_2026_10_20.md)).
+  - **On phones** both search tables keep every column and scroll sideways, with the rank and
+    the names held in place (Adam, 2026-10-19).
+  - **Missing-piece search** (2026-10-19):
+    - "At most" the replaced player's overall quality is the default (Adam);
+    - candidates can be any one season's players, starting at the replaced player's season (a
+      friend's request via Adam).
+  - **2026–27 teams** (Adam, 2026-10-19): a picker loads any team's projected starting five,
+    and a fresh browser opens on the Timberwolves'.
+    - **Rosters:** Wikipedia's roster templates (CC BY-SA), fetched 2026-10-19 21:15 UTC.
+    - **The five:** the latest published projections (Adam, 2026-10-19: deeper than a rule).
+      The base is Sports Illustrated's of 17 October, which agrees with Bleacher Report's of
+      1 October on 23 teams. Newer team reports are used for the Warriors (Kerr's leaning five),
+      the Kings (Bleacher Report's five) and the Jazz (Hayes for the injured Nurkić).
+    - **Rookies:** eight projected starters are rookies with no NBA data. A teammate stands in,
+      and the slot says so. Each player is at his latest season.
+    - **To refresh:** `scripts/rosters_2026_27.py --fetch` writes `tool/rosters_2026_27.json`;
+      then rebuild, check and deploy.
+    - **The example buttons** no longer include the three 2025–26 teams.
   - **To rebuild:** `tool/build_lineups.py --site --out DIR`, then
-    `node scripts/page_check.mjs DIR index.html` (34 checks).
+    `node scripts/page_check.mjs DIR index.html` (60 checks).
   - **To redeploy:** the command in `tool/wrangler.jsonc`. Wrangler is signed in to Adam's
     account on this laptop.
 - **The code:** https://github.com/adamwlev/lineuplab, public, MIT licence, with a fresh
@@ -20,7 +45,7 @@ reports linked below and in git history.
   - **What stays private:** the downloader, the golden fixtures and `tool/five.html`.
   - **This repository stays private** because of its history: it holds the old database
     password, scraped caches and a personal email.
-- **The private review copy:** https://claude.ai/artifact/WC4QmzeJshrnneQ4HXzk8G, version 14,
+- **The private review copy:** https://claude.ai/artifact/WC4QmzeJshrnneQ4HXzk8G, version 21,
   matching the site. Republishing it is pre-approved; list its files before each publish.
 
 The record of the launch, covering decisions, hosting, open source, Sports Reference and the
@@ -147,7 +172,10 @@ results.
 | Clean rebuild root (`paths.CLEAN`) | `experiments/cache/rebuild_pages_2026_10_14/experiments/cache/` |
 | The refresh (under `paths.CLEAN`): history refits; record; band constants; overall quality; export; comparison | `history_2026_10_16/`; `prospective_2027q1/release_record_refresh.json`; `band_constants_refresh.json`; `player_values_refresh/`; `release_export_refresh/`; `compare_refresh/` |
 | Refresh logs and failed partial outputs | `paths.CLEAN/logs/refresh_*.log`; `paths.CLEAN/logs/refresh_failed_2026_10_18/` |
-| Site and review builds | `paths.CLEAN/site_2026_10_19_github/` (live); `paths.CLEAN/review_page_v1_2026_10_19_github/` (review copy v14) |
+| Site and review builds | `paths.CLEAN/site_2026_10_20_wide4/` (live); `paths.CLEAN/review_page_2026_10_20_wide4/` (review copy v21) |
+| Team-season rosters (the best five) | `paths.CLEAN/team_seasons_2026_10_20/team_seasons.json` |
+| Persona round 3 builds, findings, screenshots | `experiments/cache/qa_2026_10_20/` |
+| 2026–27 roster templates as fetched | `experiments/cache/rosters_2026_10_19/` (21:15 UTC); `rosters_2026_10_19_first/` (21:09, identical) |
 | Public repository clone | `../lineuplab` |
 | What the tool shows (switch) | `lineups/sources.py` (`DATA`: names, clean or refresh) |
 | Frozen 2026–27 prospective fits and record (never modify) | `experiments/cache/prospective_2027q1/`, store `lineups_store_2027q1_library` |

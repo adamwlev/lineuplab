@@ -46,8 +46,8 @@ p, li { max-width: 68ch; }
 p { margin: 0; }
 .lede { color: var(--muted); font-size: 1.02rem; }
 .layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: 34px; align-items: start; }
-@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } nav.toc { position: static; } }
 nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 2px; font-size: .88rem; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } nav.toc { position: static; } }   /* after the rule it overrides (QA 2026-10-19: the contents covered the text on phones) */
 nav.toc span { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding-bottom: 4px; }
 nav.toc a { color: var(--ink); text-decoration: none; padding: 3px 0 3px 10px; border-left: 2px solid var(--line); }
 nav.toc a:hover { border-left-color: var(--accent); color: var(--accent); }
@@ -68,6 +68,7 @@ ol.stack li:not(:last-child) { background: linear-gradient(var(--line), var(--li
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; }
 .scroll { overflow-x: auto; }
 table { border-collapse: collapse; font-size: .88rem; min-width: 32rem; }
+@media (max-width: 560px) { table { min-width: 0; } }   /* phones: the tables wrap instead of running off the edge (QA 2026-10-19) */
 th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -98,6 +99,7 @@ td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: 
       <a href="#range">The range</a>
       <a href="#quality">Overall quality</a>
       <a href="#missing-piece">The missing piece</a>
+      <a href="#best-five">The best five</a>
       <a href="#breakdowns">Breakdowns</a>
       <a href="#accuracy">Accuracy</a>
       <a href="#limits">What is not checked</a>
@@ -199,16 +201,24 @@ td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: 
 
       <section id="missing-piece">
         <h2>The missing piece</h2>
-        <p>The search keeps four of Team A and tries every candidate in the fifth spot. Candidates are every 2025–26 player, or every player at his default season, leaving out player-seasons with under 500 offensive possessions. The opponent is either a league-average lineup or Team B's five, as in the main result.</p>
+        <p>The search keeps four of Team A and tries every candidate in the fifth spot. Candidates are the players of one season, starting at the season of the player being replaced (any season from 2001–02 to 2025–26 can be chosen), or every player at his default season, leaving out player-seasons with under 500 offensive possessions. The opponent is either a league-average lineup or Team B's five, as in the main result.</p>
         <p>An optional limit on overall quality narrows the candidates, for example to players a team could realistically trade for rather than the league's stars. It starts at the overall quality of the player being replaced, and any number can be typed in. Overall quality is the linear approximation shown under each player (net, per 100 possessions, under the current player-level setting), so the limit is approximate: the search still ranks the remaining candidates by the full forecast.</p>
         <p>Against a league-average lineup, an exact forecast runs 15 networks against 561 real lineups, with and without the learned module. That is about 17,000 small calculations, roughly 10 ms in a browser. Against Team B's five it is about 60 of them, so that search is several times faster. Either way the search works in two steps.</p>
         <ol>
-          <li>A screen scores every candidate with one network per seed. Against a league-average lineup it also uses only 10 lineups on each side.</li>
-          <li>The best screened candidates get the exact forecast, in screen order. This stops when no remaining candidate could reach the top ten: the screen's mean error so far, plus its largest deviation, plus half a point, still leaves the next candidate below the tenth exact forecast.</li>
+          <li>A quick first check scores every candidate with one network per seed. Against a league-average lineup it also uses only 10 lineups on each side.</li>
+          <li>The candidates the quick check likes best get the exact forecast, best first. This stops when no remaining candidate could reach the top ten: the quick check's mean error so far, plus its largest deviation, plus half a point, still leaves the next candidate below the tenth exact forecast.</li>
         </ol>
         <p>On eight four-player cores from 2025–26, this found the exact top ten every time: after 16 to 32 exact forecasts against a league-average lineup, and 16 to 40 against two specific fives. The list shows only exact numbers. The forecast, its 80% range and the combination effects are what the main result shows for that lineup.</p>
         <p>Against Team B's five, the combinations column is in the margin, so it holds both teams' effects: Team A's minus Team B's. Team B's own are part of every row. Against a five with strong pairings of its own, such as the 2017 Warriors, every row starts about a point lower. Compare the rows with each other, not with zero. The two sides can't be separated exactly, because each team's pairings change how the other team's possessions play out.</p>
-        <p class="note">The best candidates usually sit within a point or two of each other, inside each other's ranges. Read the list as a short list, not a verdict on who fits best.</p>
+        <p class="note">The best candidates are usually within a point or two of each other, inside each other's ranges. So the order among them is not certain: treat them as a group of good options.</p>
+      </section>
+
+      <section id="best-five">
+        <h2>The best five</h2>
+        <p>Pick a team and a season, and the search tries every five from its roster against Team B's five or a league-average lineup. A past season's roster is the 13 players who played the most possessions for that team, leaving out player-seasons with under 500 offensive possessions. A player traded during the season counts on each team he played for, with his whole season's estimates. For 2026–27 the roster is the roster for the first game of the season: the 13 players with NBA data who played the most in their latest season, leaving out players on two-way contracts (who play mostly in the G League) and rookies, who have no NBA data yet.</p>
+        <p>Up to 13 players make up to 1,287 fives; the list names the players it searched. The search ranks the fives the way the missing piece ranks its candidates: a quick first check of every five, then the exact forecast for the most promising, best first. It stops when the quick check's errors so far say no remaining five could reach the top ten, or after 128 exact forecasts, and says so if it stopped there. The stopping rule is a check against the quick check's own errors, not a proof: on five test team-seasons it found the exact top ten every time, after 24 to 32 exact forecasts. Against one five the whole search takes about half a second in a browser.</p>
+        <p>The last row is the five the team played most that season (for 2026–27, the five projected to start the first game), forecast against the same opponent, so the model's best can be compared with the coach's choice. The model knows nothing about health, minutes limits or fatigue.</p>
+        <p class="note">The best fives are usually within a point or two of each other, inside each other's ranges. So the order among them is not certain: treat them as a group of good options. Within that group the order often comes down to the combination effects, which add almost nothing to forward accuracy (see Accuracy), another reason not to read much into it.</p>
       </section>
 
       <section id="breakdowns">
@@ -248,6 +258,7 @@ td.r, th.r { text-align: right; font-family: var(--mono); font-variant-numeric: 
         <h2>About this site</h2>
         <p>Made by Adam Levin and Claude Code. The code is open source under the MIT licence at <a href="https://github.com/adamwlev/lineuplab">github.com/adamwlev/lineuplab</a>, without the data; questions and bug reports are welcome as issues there.</p>
         <p>Data: play-by-play from <a href="https://www.basketball-reference.com/">Basketball Reference</a> (Sports Reference LLC), 2001–02 through 2025–26, with the games that had problems (missing, short or mixed-up records) rebuilt from their game pages in October 2026.</p>
+        <p>2026–27 teams: the rosters for the first game of the season, from Wikipedia's NBA roster templates (CC BY-SA 4.0), as of 19 October 2026. The projected starters come from the latest reporting: <a href="https://www.si.com/nba/ranking-all-30-projected-nba-starting-lineups-from-worst-to-best">Sports Illustrated's projections</a> of 17 October, with newer team reports for the Warriors (the five Steve Kerr is leaning towards), the Kings (Bleacher Report's five) and the Jazz (Jaxson Hayes for the injured Jusuf Nurkić). A rookie projected to start has no NBA data yet, so a teammate who played in 2025–26 plays in his place: the one at his position who started the largest share of his games, if that is at least a quarter of them, and otherwise the teammate who started most often. The slot says so. Each player is as of his latest season.</p>
         <p>Privacy: the whole model runs in your browser. Nothing you type is sent anywhere. The page loads its fonts from Google Fonts, and your browser remembers the last lineup you built so a reload keeps it; nothing else is stored.</p>
       </section>
     </main>

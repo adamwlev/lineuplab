@@ -6,7 +6,7 @@
 //
 //   node scripts/qa_browser.mjs PERSONA start --build DIR --out DIR [--viewport 1280x800] [--mobile]
 //                                              [--network slow3g] [--cpu 4]
-//   node scripts/qa_browser.mjs PERSONA goto [PAGE]            open PAGE of the build (default lineups.html)
+//   node scripts/qa_browser.mjs PERSONA goto [PAGE]            open PAGE of the build (default index.html, else lineups.html)
 //   node scripts/qa_browser.mjs PERSONA elements               visible controls, each with a selector to use
 //   node scripts/qa_browser.mjs PERSONA sections               headings, each with a selector for text or shot
 //   node scripts/qa_browser.mjs PERSONA text [SELECTOR]        visible text (default the whole page)
@@ -135,9 +135,10 @@ async function send(persona, cmd, args) {
 // ---- the daemon: static server, Chrome, CDP ---------------------------------------------------------------
 async function daemon(persona, opts) {
   const TYPES = { ".html": "text/html; charset=utf-8", ".json": "application/json", ".txt": "text/plain" };
+  const HOME = fs.existsSync(path.join(opts.build, "index.html")) ? "index.html" : "lineups.html";   // a --site build's page
   const gz = new Map();
   const site = http.createServer((req, res) => {                // gzip, with revalidation, like a typical host
-    const name = decodeURIComponent(new URL(req.url, "http://x").pathname).replace(/^\/+/, "") || "lineups.html";
+    const name = decodeURIComponent(new URL(req.url, "http://x").pathname).replace(/^\/+/, "") || HOME;
     if (name === "favicon.ico") { res.writeHead(204); res.end(); return; }      // the host supplies the icon
     const file = path.join(opts.build, name);
     if (!file.startsWith(opts.build) || !fs.existsSync(file) || !fs.statSync(file).isFile()) { res.writeHead(404); res.end("not found"); return; }
@@ -248,7 +249,7 @@ async function daemon(persona, opts) {
   };
 
   const commands = {
-    async goto([page = "lineups.html"]) {
+    async goto([page = HOME]) {
       lastGoto = Date.now();
       const n0 = errors.length, t0 = Date.now();
       const s = await navWait(() => cdp("Page.navigate", { url: `${origin}/${page.replace(/^\/+/, "")}` }));

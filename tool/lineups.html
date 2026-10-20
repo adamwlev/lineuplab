@@ -184,7 +184,6 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
 .go:disabled { opacity: .45; cursor: default; }
 .go:focus-visible, .use:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .piece table td.who, .piece table th.who { text-align: left; white-space: normal; min-width: 10rem; }
-@media (max-width: 640px) { .piece table .od { display: none; } .piece table td.who { min-width: 8rem; } }
 .piece table td.who .s { color: var(--muted); font-size: .8rem; white-space: nowrap; }
 .piece table tr.now td { color: var(--muted); }
 .piece table tr.now td.who { font-style: italic; }
@@ -196,6 +195,10 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
 .piece-hint { font-size: .84rem; color: var(--muted); }
 .piece-hint:empty { display: none; }
 .piece.stale table { opacity: .5; }
+.best table td.who { min-width: 16rem; }
+.best-summary { font-weight: 600; font-size: .92rem; }
+.best-summary:empty { display: none; }
+.best table td.who .five { margin-right: 4px; }
 .use:disabled, .piece.stale .use { opacity: .4; cursor: default; pointer-events: none; }
 .slot.pending .dig { pointer-events: none; }
 .mini { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px;
@@ -213,7 +216,7 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
 .piece table th.who, .piece table td.who { position: sticky; left: 2.6rem; background: var(--panel); z-index: 1; }
 .piece table td.who .use { margin-left: 6px; }
 .note .chip { align-self: start; }
-.rng-inline { display: none; }
+.swipe { display: none; font-size: .84rem; color: var(--muted); }
 .breakdowns th { white-space: normal; vertical-align: bottom; }
 #assumptions td:first-child { white-space: normal; min-width: 9rem; }
 /* bars for the offense breakdown, readable at any width */
@@ -229,10 +232,8 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
 @media (max-width: 640px) {
   .bar-row { grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr) 3.2rem; }
   .slot { grid-template-columns: 1.1rem minmax(0, 1fr) auto; }
-  .piece table .rng { display: none; }
   .piece table th:first-child, .piece table td:first-child { min-width: 2.2rem; width: 2.2rem; }
-  .piece table th.who, .piece table td.who { left: 2.2rem; min-width: 0; width: 8.6rem; max-width: 8.6rem; }
-  .rng-inline { display: block; font-size: .75rem; color: var(--muted); font-weight: 400; }
+  .piece table th.who, .piece table td.who { left: 2.2rem; min-width: 0; width: 9.5rem; max-width: 9.5rem; }
   #library table, #library tbody, #library tr, #library td { display: block; width: 100%; }
   #library thead { display: none; }
   #library tr { border-top: 1px solid var(--line); padding-block: 8px; }
@@ -243,7 +244,7 @@ td.wrap, th.wrap { white-space: normal; min-width: 14rem; }
 @media (pointer: coarse), (max-width: 640px) {
   .presets { gap: 8px; } .preset { padding: 7px 12px; }
   .segmented button { min-height: 40px; }
-  .use { padding: 6px 12px; }
+  .use { padding: 6px 12px; min-height: 40px; }
   .go { min-height: 44px; }
   .mini a { padding-block: 10px; }
   .dig { padding: 8px 6px 8px 10px; }
@@ -263,12 +264,21 @@ details.assume { min-width: 0; }
 .slot-msg button { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 1px 8px; font: 500 .78rem var(--body); cursor: pointer; }
 .slot.pending .badges, .slot.pending .pvalue { opacity: .35; }
 .team-hint { font-size: .82rem; color: var(--muted); }
+.team-row { margin-bottom: 4px; }
+.team-pick { max-width: 15rem; font-size: .9rem; padding-block: 4px; }
+.team-note { font-size: .78rem; color: var(--muted); align-self: center; }
+.jump { font-size: .9rem; color: var(--muted); }
 .presets-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); align-self: center; }
 .rule-help { font-size: .76rem; color: var(--muted); max-width: 36ch; }
 #result-notes { display: grid; gap: 8px; }
 #result-notes:empty { display: none; }
 .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 8px 10px; border-radius: 4px; font-size: .88rem; max-width: none; }
 .callout a { color: inherit; }
+@media (max-width: 640px) {   /* phones: the search tables keep every column and scroll sideways, the rank and the names held in place (Adam, 2026-10-19) */
+  .piece table td.who .use { display: block; width: max-content; margin: 4px 0 0; white-space: nowrap; }
+  .swipe:has(+ .scroll > table:not([hidden])) { display: block; }
+  .jump a { display: inline-block; padding-block: 9px; }
+}
 </style>
 
 <div class="wrap">
@@ -276,6 +286,7 @@ details.assume { min-width: 0; }
     <div style="display:grid;gap:6px">
       <h1>Lineup Lab</h1>
       <p class="lede">Pick any five players, each as of one season between 2001–02 and 2025–26. The model adds up what each player brings, then applies <strong>combination effects</strong>: pairs of players who play differently together than apart. You get offense, defense and net (points scored minus points allowed), all per 100 possessions, with an 80% range for the lineup's long-run level (an 8-in-10 span). <a href="model.html">How the model works</a>.</p>
+      <p class="jump">Searches: <a href="#best">find a team's best five</a> · <a href="#piece">find the missing piece</a></p>
     </div>
     <div class="setting">
       <label id="rule-label">Player levels</label>
@@ -307,8 +318,8 @@ details.assume { min-width: 0; }
       </div>
       <div class="piece-controls">
         <div class="setting"><label for="piece-slot">Replace</label><select id="piece-slot"></select></div>
-        <div class="setting"><label for="piece-pool">Candidates</label><select id="piece-pool">
-          <option value="latest">2025–26 players</option>
+        <div class="setting"><label for="piece-pool">Candidates</label><select id="piece-pool" title="The players of one season (it starts at the season of the player being replaced), or every player at his typical season">
+          <option value="2026">2025–26 players</option>
           <option value="any">All players, typical season</option>
         </select></div>
         <div class="setting"><label for="piece-against">Against</label><select id="piece-against">
@@ -318,24 +329,49 @@ details.assume { min-width: 0; }
         <div class="setting"><label for="piece-cap-on">Overall quality</label><div class="piece-cap">
           <select id="piece-cap-on" title="Leave out candidates whose overall quality (net, the linear approximation) is above a limit, for example to look only at players a team could realistically trade for">
             <option value="any">Any</option>
-            <option value="most">At most</option>
+            <option value="most" selected>At most</option>
           </select>
-          <input type="number" id="piece-cap" step="0.1" min="-30" max="30" inputmode="decimal" disabled aria-label="Highest overall quality to include" title="Starts at the overall quality of the player being replaced">
+          <input type="number" id="piece-cap" step="0.1" min="-30" max="30" inputmode="decimal" aria-label="Highest overall quality to include" title="Starts at the overall quality of the player being replaced">
         </div></div>
         <button type="button" class="go" id="piece-go" disabled>Find</button>
       </div>
     </div>
     <p class="piece-hint" id="piece-hint"></p>
     <span class="status" id="piece-status">The search starts once the model has loaded.</span>
+    <p class="swipe">Swipe the table sideways to see every column.</p>
     <div class="scroll"><table id="piece-table" hidden></table></div>
     <p class="piece-note" id="piece-note" hidden></p>
+  </section>
+
+  <section class="piece best" id="best" aria-live="polite">
+    <div class="piece-head">
+      <div style="display:grid;gap:4px">
+        <h2>Find the best five</h2>
+        <p>Pick a team and a season, and the search tries every five from its roster against Team B's five (or a league-average lineup) to find the five that does best. The best get the full forecast, combination effects and range, beside the five the team played most that season (for 2026–27, its projected starters). <a href="model.html#best-five">How the search works</a>.</p>
+      </div>
+      <div class="piece-controls">
+        <div class="setting"><label for="best-season">Season</label><select id="best-season"></select></div>
+        <div class="setting"><label for="best-team">Team</label><select id="best-team"></select></div>
+        <div class="setting"><label for="best-against">Against</label><select id="best-against">
+          <option value="average">A league-average lineup</option>
+          <option value="b">Team B's five</option>
+        </select></div>
+        <button type="button" class="go" id="best-go" disabled>Find</button>
+      </div>
+    </div>
+    <p class="piece-hint" id="best-hint"></p>
+    <span class="status" id="best-status">The search starts once the model has loaded.</span>
+    <p class="best-summary" id="best-summary"></p>
+    <p class="swipe">Swipe the table sideways to see every column.</p>
+    <div class="scroll"><table id="best-table" hidden></table></div>
+    <p class="piece-note" id="best-note" hidden></p>
   </section>
 
   <section class="combos" id="combos" aria-live="polite">
     <div class="combo-head">
       <div style="display:grid;gap:4px">
         <h2>Combination effects</h2>
-        <p>Pairings that play differently together than apart, beyond what adding up players assumes: learned from every pairing in real lineups, and <span class="n-measured">14</span> also measured one by one in real games. Each is small, but together they bend the forecast, most of all for lineups nobody would play. <a href="model.html#combinations">How they work</a>.</p>
+        <p>Pairings that play differently together than apart, beyond what adding up players assumes: learned from every pairing in real lineups, and <span class="n-measured">12</span> also measured one by one in real games. Each is small, but together they bend the forecast, most of all for lineups nobody would play. <a href="model.html#combinations">How they work</a>.</p>
       </div>
       <div class="combo-totals" id="combo-totals"></div>
     </div>
@@ -344,7 +380,7 @@ details.assume { min-width: 0; }
   </section>
 
   <details class="library" id="library">
-    <summary>All <span class="n-measured">14</span> measured combinations, and how they were found</summary>
+    <summary>All <span class="n-measured">12</span> measured combinations, and how they were found</summary>
     <div class="inner" id="library-inner"></div>
   </details>
 
@@ -388,16 +424,17 @@ details.assume { min-width: 0; }
   const SIZES = /*FILE_SIZES*/null;                // bytes of meta.json, weights.txt, players.txt (tool/build_lineups.py)
   let worker = null;
 
-  // ---- presets --------------------------------------------------------------------------
+  // ---- teams and presets --------------------------------------------------------------------
+  // 2026–27 opening-night rosters with each team's projected five (scripts/rosters_2026_27.py; tool/build_lineups.py).
+  const ROSTERS = /*ROSTERS*/null;
+  const DEFAULT_TEAM = "Minnesota Timberwolves";
+  const ROSTER_NOTE = "Starters projected for the first game of the season, from the latest reporting (Sports Illustrated's projections of 17 October 2026, with newer team reports for the Warriors, Kings and Jazz), on Wikipedia's opening-night rosters. A rookie has no NBA data yet, so a teammate plays in his place and the slot says so. Each player is as of his latest season.";
   const PRESETS = [
-    { label: "Timberwolves 2025–26", season: 2026, names: ["Rudy Gobert", "Julius Randle", "Donte DiVincenzo", "Anthony Edwards", "Jaden McDaniels"] },
-    { label: "Nuggets 2025–26", season: 2026, names: ["Nikola Jokić", "Jamal Murray", "Aaron Gordon", "Michael Porter Jr.", "Russell Westbrook"] },
     { label: "Warriors 2016–17", season: 2017, names: ["Stephen Curry", "Klay Thompson", "Kevin Durant", "Draymond Green", "Zaza Pachulia"] },
     { label: "Spurs 2013–14", season: 2014, names: ["Tony Parker", "Danny Green", "Kawhi Leonard", "Tim Duncan", "Tiago Splitter"] },
     { label: "Heat 2012–13", season: 2013, names: ["Mario Chalmers", "Dwyane Wade", "LeBron James", "Shane Battier", "Chris Bosh"] },
     { label: "Celtics 2007–08", season: 2008, names: ["Rajon Rondo", "Ray Allen", "Paul Pierce", "Kevin Garnett", "Kendrick Perkins"] },
     { label: "Cavaliers 2024–25", season: 2025, names: ["Darius Garland", "Donovan Mitchell", "Max Strus", "Evan Mobley", "Jarrett Allen"] },
-    { label: "Knicks 2025–26", season: 2026, names: ["Jalen Brunson", "Mikal Bridges", "OG Anunoby", "Karl-Anthony Towns", "Mitchell Robinson"] },
     { label: "Five small guards", season: 2026, names: ["Trae Young", "Jalen Brunson", "Darius Garland", "Tyrese Maxey", "Donovan Mitchell"] },
     { label: "Five centers", season: 2026, names: ["Rudy Gobert", "Steven Adams", "Mitchell Robinson", "Clint Capela", "Jarrett Allen"] },
     { label: "Five Goberts", season: 2026, names: ["Rudy Gobert", "Rudy Gobert", "Rudy Gobert", "Rudy Gobert", "Rudy Gobert"] },
@@ -484,8 +521,10 @@ details.assume { min-width: 0; }
         b.setAttribute("aria-pressed", String(state.teamB === mode));
         b.addEventListener("click", () => {
           if (state.teamB === mode) return;
+          if (mode === "average") state.teamBSaved = teamPairs("b");   // "Choose a five" brings it back (QA 2026-10-19)
           state.teamB = mode; teamCard("b");
-          if (mode === "five") loadPreset("b", PRESETS[2]);
+          if (mode === "five" && state.teamBSaved) { state.teamBSaved.forEach(([pid, season], i) => setSlot("b", i, pid, season)); state.teamBSaved = null; }
+          else if (mode === "five") loadPreset("b", PRESETS.find((x) => x.label === "Warriors 2016–17"));
           run();
         });
         seg.appendChild(b);
@@ -500,9 +539,21 @@ details.assume { min-width: 0; }
       return;
     }
     const hint = document.createElement("p"); hint.className = "team-hint";
-    hint.textContent = isB ? "Type over any name to build Team B (it starts as the 2016–17 Warriors), or load an example below."
-                           : "Type a player's name in any box and press Enter, or load an example below.";
+    hint.textContent = isB ? "Pick a 2026–27 team, type over any name, or load an example below."
+                           : "Pick a 2026–27 team, type a player's name in any box and press Enter, or load an example below.";
     root.appendChild(hint);
+    if (ROSTERS) {
+      const row = document.createElement("div"); row.className = "presets team-row";
+      const label = document.createElement("label"); label.className = "presets-label"; label.htmlFor = `pick-team-${side}`; label.textContent = "2026–27 team:";
+      const pick = document.createElement("select"); pick.id = `pick-team-${side}`; pick.className = "team-pick"; pick.title = ROSTER_NOTE;
+      pick.append(new Option("Choose a team", ""));
+      for (const t of ROSTERS.teams) pick.append(new Option(t.team, t.team));
+      pick.addEventListener("change", () => { if (!pick.value) return; loadTeam(side, pick.value); run(); });   // it shows the team until a slot changes (syncPickers)
+      const note = document.createElement("span"); note.className = "team-note"; note.title = ROSTER_NOTE;
+      note.textContent = "loads the starters projected for the first game of the season";
+      row.append(label, pick, note);
+      root.appendChild(row);
+    }
     for (let i = 0; i < 5; i++) {
       const slot = document.createElement("div"); slot.className = "slot"; slot.id = `slot-${side}-${i}`;
       const n = document.createElement("span"); n.className = "n"; n.textContent = i + 1;
@@ -595,6 +646,21 @@ details.assume { min-width: 0; }
   function loadPreset(side, preset) {
     preset.names.forEach((name, i) => setSlot(side, i, pidByName(name), preset.season));
   }
+  function syncPickers() {                        // a picker names the team whose projected five the slots hold
+    if (!ROSTERS) return;
+    for (const side of ["a", "b"]) {
+      const pick = $(`pick-team-${side}`), now = pick && teamPairs(side);
+      if (!pick) continue;
+      const t = now && ROSTERS.teams.find((x) => fiveKey(x.five) === fiveKey(now));
+      pick.value = t ? t.team : "";
+    }
+  }
+  function loadTeam(side, team) {                  // a 2026–27 team's projected five, each player at his own season
+    ROSTERS.teams.find((t) => t.team === team).five.forEach(([pid, season, rookie], i) => {
+      setSlot(side, i, pid, season);
+      if (rookie) slotMsg(side, i, `In place of ${escapeHtml(rookie)}, a rookie projected to start, who has no NBA data yet.`, true);
+    });
+  }
   function slotRow(side, i) {
     const pid = slotPid(side, i), sel = $(`season-${side}-${i}`), season = sel ? Number(sel.value) : 0;
     if (pid === undefined || !season) return null;
@@ -628,7 +694,7 @@ details.assume { min-width: 0; }
   const VALUE_NOTE = "Overall quality is a straight-line summary of the model, before combination effects: a typical player is about 0, and adding up five players' numbers gives a rough estimate for a lineup. The model itself is not a straight line.";
   function valueLine(row) {
     const v = VALUES(), off = v.offense[row], def = v.defense[row], net = off - def;
-    return `<abbr title="${VALUE_NOTE}" tabindex="0">Overall quality</abbr>: net <strong class="${net >= 0 ? "up" : "down"}">${signed(net)}</strong> (offense ${signed(off)}, points allowed ${signed(def)}) <span class="approx">a straight-line estimate</span><button type="button" class="dig" data-row="${row}">Details</button>`;
+    return `<abbr title="${VALUE_NOTE}" tabindex="0">Overall quality</abbr>: net <strong class="${tone(net)}">${signed(net)}</strong> (offense ${signed(off)}, points allowed ${signed(def)}) <span class="approx">a straight-line estimate</span><button type="button" class="dig" data-row="${row}">Details</button>`;
   }
   // ---- player details: the capability library's estimates for one player-season ------------------
   const ZONES = ["at the rim", "in the paint", "from mid-range", "from long mid-range", "from the corner three", "from above-break three"];
@@ -1031,7 +1097,7 @@ details.assume { min-width: 0; }
       <td class="num" data-label="Held-out check 2022–26, seasons">${evidence(e.confirmation)}, ${e.confirmation.seasons}/5</td><td class="num" data-label="2007–13">${evidence(e.replication)}</td></tr>`).join("");
     $("library-inner").innerHTML = `<p>A pairing is one player of the first type next to a different player of the second; a player who is both types counts in both roles. The neural model's value for a player already assumes the pairings he usually has, so an effect counts only pairings beyond that: what "the model already expects from the players alone" is the straight-line estimate from the lineup's type counts, which can dip below zero when a lineup has none of either type. A lineup with more of a pairing than that gets the effect, and one with fewer gets the reverse. The search covered 105 type pairings across points and seven events. Pairings were found on 2016–21 games and confirmed on 2022–26 games the search never saw: these ${K.effects.length} held up. Each was re-checked on 2007–13, shown in the last column; most point the same way there${reversed ? `, and ${reversed === 1 ? "one points" : `${reversed} point`} the other way` : ""}. None changes points by enough to see directly (the limit is about 0.5 per 100 per pairing), so their points come from accounting: shots moved to the rim or the arc at the offense's own make rates, turnovers at its points per possession, and free throws net of the shot they replace.</p>
       <div class="scroll"><table><thead><tr><th class="wrap">Combination</th><th class="wrap">What changes</th><th>Per pairing, used (2022–26, fitted together)</th><th>≈ points per 100 per pairing*</th><th>Held-out check 2022–26 (alone), seasons</th><th>2007–13 (alone)</th></tr></thead><tbody>${rows}</tbody></table></div>
-      <p class="muted" style="font-size:.82rem">*At league-average rates; positive is more points for the offense. The "used" column is fitted on 2022–26 without the last two minutes of close games, with all 14 together. Pairings titled "nothing beyond …" held up alone but are carried by their neighbours once fitted together, and add little. Small guards beside a rim anchor is a separate, pre-registered test for 2026–27 and is not in the number.</p>`;
+      <p class="muted" style="font-size:.82rem">*At league-average rates; positive is more points for the offense. The "used" column is fitted on 2022–26 without the last two minutes of close games, with all ${K.effects.length} together. Pairings titled "nothing beyond …" held up alone but are carried by their neighbours once fitted together, and add little. Small guards beside a rim anchor is a separate, pre-registered test for 2026–27 and is not in the number.</p>`;
   }
 
   // ---- results -----------------------------------------------------------------------------
@@ -1111,7 +1177,9 @@ details.assume { min-width: 0; }
   }
 
   function run() {
+    syncPickers();
     pieceChanged();
+    bestChanged();
     saveTeams();
     if (!state.ready) return;
     const sides = state.teamB === "five" ? ["a", "b"] : ["a"];
@@ -1149,17 +1217,21 @@ details.assume { min-width: 0; }
   const PIECE = { shown: 10, first: 12, most: 64, batch: 8, slack: 0.5 };
   const piece = { seq: 0, pending: new Map(), helpers: [], ask: 0, core: null, rule: null, rows: [], open: 4,
                   opponent: null, teamB: null };
-  const teamB = () => (state.teamB === "five" ? readTeam("b") : null);
+  const teamB = () => (state.teamB === "five" && [0, 1, 2, 3, 4].every((i) => !slotProblem("b", i)) ? readTeam("b") : null);   // a complete five only
+  function teamPairs(side) {                     // [pid, season] for each slot, or null if one is empty
+    const v = [0, 1, 2, 3, 4].map((i) => [slotPid(side, i), Number($(`season-${side}-${i}`).value)]);
+    return v.every(([pid]) => pid !== undefined) ? v : null;
+  }
   function pieceHint() {
     const v = $("piece-against").value, P = state.meta ? state.meta.panel : null;
     const n = P ? `${P.defense.rows.length + P.offense.rows.length} real 2025–26 lineups (it attacks ${P.defense.rows.length} and defends against ${P.offense.rows.length})` : "hundreds of real lineups";
     $("piece-hint").textContent = v === "average"
       ? `A league-average lineup is the slower search: every candidate's lineup plays ${n}, and the search averages them.`
-      : teamB() ? "Each candidate's lineup plays Team B's five, on offense and on defense: one opponent, so this search is faster."
+      : teamB() ? `Each candidate's lineup plays Team B's five (${named("b", teamB())}), on offense and on defense: one opponent, so this search is faster.`
       : state.teamB === "five" ? "Team B has an empty or unrecognized player: fix it to search against Team B."
       : "Choose Team B's five first: under Team B, click Choose a five.";
   }
-  const PIECE_KINDS = new Set(["screen", "forecast", "band"]);
+  const PIECE_KINDS = new Set(["screen-fives", "forecast", "band"]);
   function ask(w, msg) {
     const id = `piece-${++piece.ask}`;
     return new Promise((resolve, reject) => { piece.pending.set(id, [resolve, reject]); w.postMessage({ ...msg, id }); });
@@ -1170,7 +1242,33 @@ details.assume { min-width: 0; }
     piece.pending.delete(m.id);
     if (m.error) p[1](new Error(m.error)); else p[0](m);
   }
-  const took = (seconds) => (seconds < 1 ? `${Math.round(1000 * seconds)} ms` : `${seconds.toFixed(1)} s`);
+  const took = (seconds) => (seconds < 0.05 ? "under 0.1 seconds" : `${seconds.toFixed(1)} seconds`);
+  const tone = (x) => (Math.abs(x) < 0.05 ? "" : x > 0 ? "up" : "down");     // no red "+0.0"
+  // Use from a search against a league-average lineup while Team B is a five: the main result plays the same
+  // opponent as the search (QA 2026-10-19: +14.3 in the list read +3.7 against Team B). Team B's five is kept,
+  // and "Choose a five" brings it back.
+  function matchSearchOpponent(opponent) {
+    if (opponent || state.teamB !== "five") return "";
+    state.teamBSaved = teamPairs("b");
+    state.teamB = "average"; teamCard("b");
+    return " Team B is now a league-average lineup, as in the search (Choose a five under Team B brings its five back).";
+  }
+  // A search against Team B with no five for Team B: say so beside Find, with the two ways on (QA 2026-10-19: Find
+  // seemed to do nothing).
+  function needTeamB(statusId, againstId, go) {
+    const s = $(statusId);
+    s.classList.remove("busy");
+    s.innerHTML = (state.teamB === "five" ? "Fix Team B above, or " : `<button type="button" class="use" data-act="five">Choose a five for Team B</button> or `)
+      + `<button type="button" class="use" data-act="average">search against a league-average lineup</button>.`;
+    s.onclick = (ev) => {
+      const b = ev.target.closest("button[data-act]");
+      if (!b) return;
+      s.onclick = null;
+      if (b.dataset.act === "five") { $("b-mode-five").click(); s.textContent = `Team B is now ${named("b", teamB())}: change it above, or click Find.`; }
+      else { $(againstId).value = "average"; $(againstId).dispatchEvent(new Event("change")); go(); }
+    };
+  }
+
   function startHelpers(meta, weights, players) {
     const n = Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 4) - 2));
     const source = $("model-src").textContent + "\n" + WORKER_GLUE;
@@ -1196,6 +1294,23 @@ details.assume { min-width: 0; }
     }
     sel.value = keep || "4";
     pieceCapDefault();
+    piecePoolDefault();
+  }
+  // Candidates: one season's players, starting at the replaced player's season (a friend's request, 2026-10-19:
+  // "replace with someone who played in that year"), or every player at his typical season. The choice follows
+  // the replaced player until the viewer picks one.
+  function piecePoolDefault() {
+    const sel = $("piece-pool");
+    if (!state.meta) return;
+    if (!sel.dataset.filled) {
+      sel.innerHTML = "";
+      sel.append(new Option("All players, typical season", "any"));
+      for (const y of [...new Set(state.meta.players.season)].sort((a, b) => b - a)) sel.append(new Option(`${seasonLabel(y)} players`, String(y)));
+      sel.dataset.filled = "1";
+    }
+    if (sel.dataset.chosen) return;
+    const r = slotRow("a", Number($("piece-slot").value));
+    sel.value = String(r === null ? state.meta.latest_season : state.meta.players.season[r]);
   }
   // The optional limit on overall quality (Adam, 2026-10-18: realistic trade targets, not the league's best).
   // It starts at the replaced player's overall quality (net, the linear approximation under the current rule)
@@ -1220,7 +1335,7 @@ details.assume { min-width: 0; }
   function pieceCandidates(core, which, cap, current) {          // the replaced player-season is the "now" row
     const P = state.meta.players, thin = state.meta.band.thin_possessions, taken = new Set(core.map((r) => P.pid[r]));
     const rows = [];
-    if (which === "latest") P.season.forEach((s, r) => { if (s === state.meta.latest_season) rows.push(r); });
+    if (which !== "any") P.season.forEach((s, r) => { if (s === Number(which)) rows.push(r); });
     else for (const [p, s] of Object.entries(state.meta.defaults)) rows.push(directory.seasons.get(Number(p)).find((x) => x.season === s).row);
     const keep = rows.filter((r) => !taken.has(P.pid[r]) && r !== current);
     const ok = keep.filter((r) => P.offense_possessions[r] >= thin);
@@ -1228,31 +1343,38 @@ details.assume { min-width: 0; }
     return { rows: under, thin: keep.length - ok.length, capped: ok.length - under.length };
   }
   const sides = () => (piece.opponent ? ["a_offense", "b_offense"] : ["offense", "defense"]);
+  // The searches' columns, in plain words and the same in both modes (QA 2026-10-19: "Net, A − B", "B's offense",
+  // "inside the margin" and "compare rows, not signs" were unclear). who: whose net it is.
+  function searchHeads(opponent, who) {
+    const vs = opponent ? "Team B's five" : "a league-average lineup";
+    return `<th title="${who}: points scored minus points allowed per 100 possessions, against ${vs}">Net</th><th class="rng">80% range</th>`
+      + `<th class="od" title="${who}: points scored per 100 possessions">Scored</th><th class="od" title="${who}: points allowed per 100 possessions">Allowed</th>`
+      + `<th class="cmb" title="How much of the net comes from pairs of players who play differently together${opponent ? ": the effects for the five in the row minus the effects for Team B's five" : ""}">Combination effects</th>`;
+  }
+  const KEY = (opponent) => "Net: points scored minus points allowed per 100 possessions. Scored and Allowed: each side of it."
+    + (opponent ? " Combination effects: how much of the net comes from pairs of players who play differently together, the effects for the five in the row minus the effects for Team B's five. Team B's part is the same in every row, so this column is for comparing the rows."
+                : " Combination effects: how much of the net comes from pairs of players who play differently together.");
   function pieceRow(x, k, now) {
     const P = state.meta.players, r = x.row, pid = P.pid[r];
     const name = escapeHtml(state.meta.names[String(pid)]);
     const band = x.band ? `${signed(x.band.low)} to ${signed(x.band.high)}` : `<span class="pending">…</span>`;
-    const vs = now ? `<td class="num">${x.current ? "" : signed(x.f.margin - now.f.margin)}</td>` : "";
+    const vs = now ? `<td class="num vs">${x.current ? "" : signed(x.f.margin - now.f.margin)}</td>` : "";
     const cls = x.current ? "now" : (piece.used === r ? "used" : "");
     return `<tr class="${cls}"><td class="num">${x.current ? "" : k + 1}</td>
-      <td class="who">${name} <span class="s">${seasonLabel(P.season[r])}${x.current ? " · current" : ""}</span>${x.current ? "" : `<button type="button" class="use" data-row="${r}">Use</button>`}</td>
-      <td class="num net ${x.f.margin >= 0 ? "up" : "down"}">${signed(x.f.margin)}<span class="rng-inline">${band}</span></td><td class="num rng">${band}</td>
+      <td class="who">${name} <span class="s">${seasonLabel(P.season[r])}${x.current ? " · current" : ""}</span>${x.current ? "" : `<button type="button" class="use" data-row="${r}" title="Put him in spot ${piece.open + 1} of Team A"${piece.used === r ? " disabled" : ""}>${piece.used === r ? "In Team A ✓" : "Put in Team A"}</button>`}</td>
+      <td class="num net ${tone(x.f.margin)}">${signed(x.f.margin)}</td><td class="num rng">${band}</td>
       <td class="num od">${fmt(x.f[sides()[0]])}</td><td class="num od">${fmt(x.f[sides()[1]])}</td>
-      <td class="num">${signed(x.f.learned + x.f.combinations, 2)}</td>${vs}</tr>`;
+      <td class="num cmb">${signed(x.f.learned + x.f.combinations, 2)}</td>${vs}</tr>`;
   }
   function drawPiece() {
     const t = $("piece-table"), now = piece.rows.find((x) => x.current);
     const list = piece.rows.filter((x) => !x.current);
     t.hidden = false;
-    const [net, off, def] = piece.opponent ? ["Net, A − B", "A's offense", "B's offense"] : ["Net", "Offense", "Defense"];
+    const head = searchHeads(piece.opponent, "Team A with this player");
     // Against Team B the margin's combinations are Team A's minus Team B's, and B's are in every row (Adam, 2026-10-18:
     // against the 2017 Warriors every row read about -1). The two sides do not separate exactly: each team's pairings
     // change how the other's possessions play out.
-    const combos = piece.opponent
-      ? `<th title="Both teams' combination effects, in the margin: Team A's minus Team B's. Team B's own are in every row, so compare rows, not signs; vs current gives each candidate's difference.">Combinations, both teams</th>`
-      : `<th title="Combination effects, in the net">Combinations</th>`;
-    t.innerHTML = `<thead><tr><th>#</th><th class="who">Player</th><th>${net}</th><th class="rng">80% range</th><th class="od">${off}</th><th class="od">${def}</th>
-      ${combos}${now ? "<th title=\"Each candidate's net minus the current player's\">vs current</th>" : ""}</tr></thead>
+    t.innerHTML = `<thead><tr><th>#</th><th class="who">Player</th>${head}${now ? "<th class=\"vs\" title=\"Each candidate's net minus the current player's\">vs current player</th>" : ""}</tr></thead>
       <tbody>${list.map((x, k) => pieceRow(x, k, now)).join("")}${now ? pieceRow(now, 0, now) : ""}</tbody>`;
   }
   async function findPiece() {
@@ -1266,8 +1388,8 @@ details.assume { min-width: 0; }
     }
     const current = slotRow("a", open), which = $("piece-pool").value, rule = state.rule;
     const opponent = $("piece-against").value === "b" ? teamB() : null;
-    const blocked = (text) => { $("piece-status").textContent = text; piece.blocked = true; if (piece.core) $("piece").classList.add("stale"); };
-    if ($("piece-against").value === "b" && !opponent) { pieceHint(); blocked(""); return; }
+    const blocked = (text) => { $("piece-status").textContent = text; piece.blocked = true; $("piece-note").hidden = true; if (piece.core) $("piece").classList.add("stale"); };
+    if ($("piece-against").value === "b" && !opponent) { pieceHint(); blocked(""); needTeamB("piece-status", "piece-against", () => findPiece()); return; }
     const cap = pieceCap();
     if (Number.isNaN(cap)) { blocked("Enter the highest overall quality to include, or choose Any."); return; }
     if (cap !== null && !(Math.abs(cap) <= 30)) { blocked("Enter an overall quality between −30 and +30, or choose Any."); return; }
@@ -1280,60 +1402,33 @@ details.assume { min-width: 0; }
     $("piece-table").parentElement.scrollLeft = 0;
     $("piece-status").textContent = `Checking ${cands.length.toLocaleString()} players`;
     $("piece-status").classList.add("busy");
-    // 1. screen, split across the model's worker and the ready helpers
-    const workers = [worker, ...piece.helpers.filter((h) => h.ready)];
-    const size = Math.ceil(cands.length / workers.length);
-    const parts = workers.map((w, k) => cands.slice(k * size, (k + 1) * size)).filter((c) => c.length);
-    const replies = await Promise.all(parts.map((c, k) => ask(workers[k], { kind: "screen", core, candidates: c, rule, opponent })));
-    if (id !== piece.seq) return;
-    const screen = new Map();
-    parts.forEach((c, k) => c.forEach((r, j) => screen.set(r, replies[k].scores[j])));
-    const order = cands.slice().sort((a, b) => screen.get(b) - screen.get(a));
-    // 2. exact forecasts, best screened first, until nothing left could reach the top ten
-    const exact = [];
-    let next = 0;
     const at = (r) => [...core.slice(0, open), r, ...core.slice(open)];   // the five in Team A's order
-    const batch = (rows) => ask(worker, { kind: "forecast", fives: rows.map(at), rule, opponent });
     if (current !== null) {
-      const m = await batch([current]);
+      const m = await ask(worker, { kind: "forecast", fives: [at(current)], rule, opponent });
       if (id !== piece.seq) return;
       piece.rows.push({ row: current, f: m.results[0], current: true });
     }
     const now = piece.rows.slice();
-    const draw = () => {                           // the exact top ten so far, then the current fifth
-      exact.sort((a, b) => b.f.margin - a.f.margin);
-      piece.rows = exact.slice(0, PIECE.shown).concat(now);
+    const top = (exact) => {                       // the exact top ten so far, then the current fifth
+      piece.rows = exact.slice(0, PIECE.shown).map((x) => ({ row: cands[x.i], f: x.f })).concat(now);
       drawPiece();
     };
-    let complete = false;
-    while (next < order.length && exact.length < PIECE.most) {
-      const rows = order.slice(next, next + PIECE.batch); next += rows.length;
-      const m = await batch(rows);
-      if (id !== piece.seq) return;
-      rows.forEach((r, j) => exact.push({ row: r, f: m.results[j], gap: m.results[j].margin - screen.get(r) }));
-      if (exact.length >= PIECE.shown) { draw(); $("piece-status").textContent = `Refining: ${exact.length} full forecasts`; }
-      if (next >= order.length) { complete = true; break; }
-      if (exact.length < PIECE.first) continue;
-      const tenth = exact.map((x) => x.f.margin).sort((a, b) => b - a)[PIECE.shown - 1];
-      const gaps = exact.map((x) => x.gap), mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-      const spread = Math.max(...gaps.map((g) => Math.abs(g - mean)));
-      if (screen.get(order[next]) + mean + spread + PIECE.slack < tenth) { complete = true; break; }
-    }
-    draw();
+    const ranked = await rankFives(cands.map(at), { rule, opponent, live: () => id === piece.seq,
+      onTop: (exact) => { top(exact); $("piece-status").textContent = `Refining: ${exact.length} full forecasts`; } });
+    if (!ranked) return;
+    const { exact, complete } = ranked;
+    top(exact);
     $("piece-note").hidden = false;
     $("piece-note").textContent = `Against ${opponent ? "Team B's five" : "a league-average lineup"}: `
-      + `${cands.length.toLocaleString()} ${which === "latest" ? "2025–26 players" : "players"} checked with a quick version of the model`
+      + `${cands.length.toLocaleString()} ${which === "any" ? "players at their typical season" : `${seasonLabel(Number(which))} players`} checked with a quick version of the model`
       + `${cap === null ? "" : ` with overall quality ${signed(cap)} or lower`}`
       + `${thin || capped ? ` (${[thin ? `${thin.toLocaleString()} with under ${state.meta.band.thin_possessions} offensive possessions` : "",
                                capped ? `${capped.toLocaleString()} above that quality` : ""].filter(Boolean).join(" and ")} left out)` : ""},`
       + ` and the ${exact.length} most promising given the full forecast.`
       + `${complete ? "" : ` The search stopped after ${PIECE.most} full forecasts; a candidate the quick check ranked lower could still belong in the top ten.`}`
       + ` The best candidates are usually close and their ranges`
-      + ` overlap, so read this as a short list rather than a ranking.`
-      + (opponent
-        ? ` Combinations, both teams: the combination effects inside the margin, Team A's minus`
-          + ` Team B's. Team B's own are in every row, so compare rows, not signs${current !== null ? "; vs current gives each candidate's difference" : ""}.`
-        : ` Combinations: the combination effects inside the net.`);
+      + ` overlap, so treat them as a group of good options rather than a ranking.`
+      + ` ${KEY(opponent)}${current !== null ? " vs current player: each candidate's net minus the current player's." : ""}`;
     // 3. ranges, one row at a time
     for (const x of piece.rows) {
       $("piece-status").textContent = "Adding the ranges";
@@ -1349,9 +1444,11 @@ details.assume { min-width: 0; }
     const P = state.meta.players, i = piece.open;
     setSlot("a", i, P.pid[r], P.season[r]);
     piece.used = r;
+    const also = matchSearchOpponent(piece.opponent);
     drawPiece();
     pieceSlots();
     run();
+    if (also) $("piece-status").insertAdjacentText("beforeend", also);
   }
   function pieceChanged() {                        // a team or the rule changed: is the list still for them?
     pieceSlots();
@@ -1373,7 +1470,8 @@ details.assume { min-width: 0; }
     }
   }
   $("piece-against").addEventListener("change", pieceHint);
-  $("piece-slot").addEventListener("change", pieceCapDefault);
+  $("piece-slot").addEventListener("change", () => { pieceCapDefault(); piecePoolDefault(); });
+  $("piece-pool").addEventListener("change", () => { $("piece-pool").dataset.chosen = "1"; });
   $("piece-cap-on").addEventListener("change", () => { $("piece-cap").disabled = $("piece-cap-on").value !== "most"; });
   $("piece-cap").addEventListener("input", () => { delete $("piece-cap").dataset.exact; });
   $("piece-go").addEventListener("click", () => findPiece().catch((err) => {
@@ -1383,6 +1481,236 @@ details.assume { min-width: 0; }
   $("piece-table").addEventListener("click", (ev) => {
     const b = ev.target.closest(".use");
     if (b && !$("piece").classList.contains("stale")) usePiece(Number(b.dataset.row));   // a stale list's rows are not for this lineup
+  });
+
+  // Rank fives, best first: the screen on the model's worker and the ready helpers, then exact forecasts in screen
+  // order until no unforecast five could reach the top ten (the stop rule above). Shared by the missing piece (each
+  // candidate's five) and the best five (every five of a roster). live(): false once a newer search has started;
+  // onTop(exact): the exact forecasts so far, best first, once there are ten.
+  async function rankFives(fives, { rule, opponent, live, onTop, most = PIECE.most }) {
+    const workers = [worker, ...piece.helpers.filter((h) => h.ready)];
+    const size = Math.ceil(fives.length / workers.length);
+    const parts = workers.map((w, k) => fives.slice(k * size, (k + 1) * size)).filter((c) => c.length);
+    const replies = await Promise.all(parts.map((c, k) => ask(workers[k], { kind: "screen-fives", fives: c, rule, opponent })));
+    if (!live()) return null;
+    const screen = replies.flatMap((m) => m.scores);
+    const order = fives.map((_, i) => i).sort((a, b) => screen[b] - screen[a]);
+    const exact = [];
+    let next = 0, complete = false;
+    while (next < order.length && exact.length < most) {
+      const batch = order.slice(next, next + PIECE.batch); next += batch.length;
+      const m = await ask(worker, { kind: "forecast", fives: batch.map((i) => fives[i]), rule, opponent });
+      if (!live()) return null;
+      batch.forEach((i, j) => exact.push({ i, f: m.results[j], gap: m.results[j].margin - screen[i] }));
+      exact.sort((a, b) => b.f.margin - a.f.margin);
+      if (exact.length >= PIECE.shown) onTop(exact);
+      if (next >= order.length) { complete = true; break; }
+      if (exact.length < PIECE.first) continue;
+      const gaps = exact.map((x) => x.gap), mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+      const spread = Math.max(...gaps.map((g) => Math.abs(g - mean)));
+      if (screen[order[next]] + mean + spread + PIECE.slack < exact[PIECE.shown - 1].f.margin) { complete = true; break; }
+    }
+    return { exact, complete };
+  }
+
+  // ---- the best five (Adam, 2026-10-19) -----------------------------------------------------------------
+  // Every five of one team-season's roster against Team B's five or a league-average lineup, ranked as the missing
+  // piece ranks its candidates (rankFives), with room for more exact forecasts (BEST_MOST). A past season's roster is
+  // the team's 13 players with the most possessions for it (scripts/team_seasons.py); 2026–27's is the opening-night
+  // roster's players with NBA data, two-way players left out, the 13 who played the most in their latest season
+  // (tool/build_lineups.py). The last row is the five the team played most, or its projected starters. On five test
+  // team-seasons the stop rule found the exact top ten after 24 to 32 exact forecasts (scripts/best_five_check.js).
+  // QA (2026-10-19): the opponent, the spread of the top ten, the players searched and the reference five's
+  // stand-ins are said in words; Use says what it did and plays the search's opponent.
+  const TEAMS = /*TEAM_SEASONS*/null;
+  const BEST_MOST = 128;
+  const best = { seq: 0, rows: [], rule: null, opponent: null, used: null, blocked: false, teamB: null };
+  const rowOf = (p, s) => directory.seasons.get(p).find((x) => x.season === s).row;
+  const SUFFIXES = new Set(["Jr.", "Sr.", "II", "III", "IV"]);
+  function fiveNames(five, pool = []) {            // last names; full names where the five or the pool has two players
+    const P = state.meta.players, name = (r) => state.meta.names[String(P.pid[r])];   // with one (QA 2026-10-19: three Williamses)
+    const last = (n) => n.split(" ").filter((w) => !SUFFIXES.has(w)).slice(-1)[0];
+    const owners = new Map();
+    for (const r of [...pool, ...five]) { const l = last(name(r)); if (!owners.has(l)) owners.set(l, new Set()); owners.get(l).add(P.pid[r]); }
+    return five.map((r) => (owners.get(last(name(r))).size > 1 ? name(r) : last(name(r))));
+  }
+  // The team or example a side's five came from, if any (QA 2026-10-19: "Choose a five" quietly loaded the Warriors).
+  const fiveKey = (pairs) => pairs.map(([pid, season]) => pid * 10000 + season).sort().join();
+  function teamLabel(side) {
+    const now = teamPairs(side);
+    if (!now) return "";
+    const k = fiveKey(now), t = ROSTERS && ROSTERS.teams.find((x) => fiveKey(x.five) === k);
+    if (t) return `the ${t.team}${/s$/.test(t.team) ? "'" : "'s"} projected starters`;   // the Celtics', the Thunder's
+    const pr = PRESETS.find((x) => fiveKey(x.names.map((n) => [pidByName(n), x.season])) === k);
+    return pr ? `the ${pr.label}` : "";
+  }
+  const named = (side, rows) => { const l = teamLabel(side); return `${l ? `${l}, ` : ""}${fiveNames(rows).join(" · ")}`; };
+  const BEST_KEY = "lineup-lab-best-v1";          // the last season and team searched (a per-browser convenience)
+  function bestInit() {
+    const sel = $("best-season");
+    if (!TEAMS || sel.options.length) return;
+    const years = Object.keys(TEAMS).map(Number).sort((a, b) => b - a);
+    for (const y of years) sel.append(new Option(y === years[0] ? `${seasonLabel(y)} (start of season)` : seasonLabel(y), String(y)));
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(BEST_KEY) || "null"); } catch (e) { saved = null; }
+    sel.value = saved && TEAMS[saved.season] ? String(saved.season) : String(years[0]);
+    bestTeams(saved && TEAMS[saved.season] ? saved.team : DEFAULT_TEAM);
+  }
+  const FRANCHISES = [["Seattle SuperSonics", "Oklahoma City Thunder"], ["New Jersey Nets", "Brooklyn Nets"],
+                       ["Charlotte Bobcats", "Charlotte Hornets"], ["New Orleans Hornets", "New Orleans/Oklahoma City Hornets", "New Orleans Pelicans"]];
+  function bestTeams(keep) {
+    const sel = $("best-team"), prev = keep || sel.value;
+    sel.innerHTML = "";
+    for (const t of TEAMS[$("best-season").value]) sel.append(new Option(t.team, t.team));
+    const has = (name) => [...sel.options].some((o) => o.value === name);
+    const same = has(prev) ? prev : (FRANCHISES.find((f) => f.includes(prev)) || []).find(has);   // the franchise under another name
+    if (same) sel.value = same;
+  }
+  function bestHint() {
+    $("best-hint").textContent = $("best-against").value === "average"
+      ? "A league-average lineup is the slower search: each of the best fives plays hundreds of real 2025–26 lineups. To play the team against one five, choose Team B's five."
+      : teamB() ? `Every five plays Team B's five (${named("b", teamB())}), on offense and on defense.`
+      : state.teamB === "five" ? "Team B has an empty or unrecognized player: fix it to search against Team B."
+      : "Choose Team B's five first (under Team B, click Choose a five), or search against a league-average lineup.";
+  }
+  const bsides = () => (best.opponent ? ["a_offense", "b_offense"] : ["offense", "defense"]);
+  const sameFive = (a, b) => a.slice().sort().join() === b.slice().sort().join();
+  function bestRow(x, k, ref) {
+    const P = state.meta.players, full = x.five.map((r) => state.meta.names[String(P.pid[r])]).join(", ");
+    const key = x.current ? "ref" : String(k), what = best.projected ? "the projected five" : "the most-used five";
+    const tag = x.current ? best.label : sameFive(x.five, ref.five) ? what : "";
+    const band = x.band ? `${signed(x.band.low)} to ${signed(x.band.high)}` : `<span class="pending">…</span>`;
+    return `<tr class="${x.current ? "now" : ""}${best.used === key ? " used" : ""}"><td class="num">${x.current ? "" : k + 1}</td>
+      <td class="who"><span class="five" title="${escapeHtml(full)}">${fiveNames(x.five, best.pool).map(escapeHtml).join(" · ")}</span>${tag ? ` <span class="s">${escapeHtml(tag)}</span>` : ""}<button type="button" class="use" data-k="${key}" title="Put this five in Team A"${best.used === key ? " disabled" : ""}>${best.used === key ? "In Team A ✓" : "Put in Team A"}</button></td>
+      <td class="num net ${tone(x.f.margin)}">${signed(x.f.margin)}</td><td class="num rng">${band}</td>
+      <td class="num od">${fmt(x.f[bsides()[0]])}</td><td class="num od">${fmt(x.f[bsides()[1]])}</td>
+      <td class="num cmb">${signed(x.f.learned + x.f.combinations, 2)}</td><td class="num vs">${x.current ? "" : signed(x.f.margin - ref.f.margin)}</td></tr>`;
+  }
+  function drawBest() {
+    const t = $("best-table"), ref = best.rows.find((x) => x.current), list = best.rows.filter((x) => !x.current);
+    t.hidden = false;
+    const vs = best.projected ? "the projected five" : "the most-used five";
+    t.innerHTML = `<thead><tr><th>#</th><th class="who">Five</th>${searchHeads(best.opponent, "The five in the row")}<th class="vs" title="Each five's net minus ${vs}'s">vs ${vs.replace("the ", "")}</th></tr></thead>
+      <tbody>${list.map((x, k) => bestRow(x, k, ref)).join("")}${bestRow(ref, 0, ref)}</tbody>`;
+    const top = list.map((x) => x.f.margin), bands = list.filter((x) => x.band).map((x) => x.band.high - x.band.low);
+    $("best-summary").textContent = `${best.title}.` + (top.length > 1
+      ? ` The top ${top.length} are within ${(Math.max(...top) - Math.min(...top)).toFixed(1)} points of each other`
+        + (bands.length ? `, and each 80% range is about ${Math.round(bands.reduce((a, b) => a + b, 0) / bands.length)} points wide` : "")
+        + ", so the order among them is not certain: treat them as a group of good options." : "");
+  }
+  async function findBest() {
+    if (!state.ready || !TEAMS) return;
+    const season = Number($("best-season").value), entry = TEAMS[season].find((t) => t.team === $("best-team").value);
+    const rule = state.rule, opponent = $("best-against").value === "b" ? teamB() : null;
+    try { localStorage.setItem(BEST_KEY, JSON.stringify({ season, team: entry.team })); } catch (e) { /* private window */ }
+    const blocked = (text) => { $("best-status").textContent = text; best.blocked = true; if (best.rows.length) $("best").classList.add("stale"); };
+    if ($("best-against").value === "b" && !opponent) { bestHint(); blocked(""); needTeamB("best-status", "best-against", () => findBest()); return; }
+    const roster = entry.roster.map(([pid, y]) => rowOf(pid, y)), ref = entry.ref.map(([pid, y]) => rowOf(pid, y)), n = roster.length;
+    const fives = [];
+    for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++)
+      for (let e = d + 1; e < n; e++) fives.push([roster[a], roster[b], roster[c], roster[d], roster[e]]);
+    best.blocked = false;
+    const id = ++best.seq, t0 = performance.now(), latest = season === Math.max(...Object.keys(TEAMS).map(Number));
+    const against = opponent ? `Team B's five (${named("b", opponent)})` : "a league-average lineup";
+    Object.assign(best, { rule, opponent, rows: [], used: null, label: entry.label, projected: latest, running: true, complete: false, pool: [...roster, ...ref],
+                          staleBy: null, title: `${entry.team} ${seasonLabel(season)}: the best fives against ${against}` });
+    $("best").classList.add("stale");              // the old list's buttons are off until this one draws (QA 2026-10-19)
+    $("best-note").hidden = true;
+    $("best-table").hidden = true;                 // until this search draws: the old rows have no caption (QA 2026-10-19)
+    $("best-summary").textContent = "";
+    $("best-table").parentElement.scrollLeft = 0;
+    $("best-status").textContent = `Checking ${fives.length.toLocaleString()} fives`;
+    $("best-status").classList.add("busy");
+    const m = await ask(worker, { kind: "forecast", fives: [ref], rule, opponent });
+    if (id !== best.seq) return;
+    const now = [{ five: ref, f: m.results[0], current: true }];
+    const top = (exact) => {
+      best.rows = exact.slice(0, PIECE.shown).map((x) => ({ five: fives[x.i], f: x.f })).concat(now);
+      $("best").classList.remove("stale");
+      drawBest();
+    };
+    const ranked = await rankFives(fives, { rule, opponent, most: BEST_MOST, live: () => id === best.seq,
+      onTop: (exact) => { top(exact); $("best-status").textContent = `Refining: ${exact.length} full forecasts`; } });
+    if (!ranked) return;
+    top(ranked.exact);
+    const thin = state.meta.band.thin_possessions;
+    $("best-note").hidden = false;
+    $("best-note").textContent = `All ${fives.length.toLocaleString()} fives of these ${n} players were checked with a quick version of the model, and the ${ranked.exact.length} most promising got the full forecast: `
+      + `${fiveNames(roster, roster).join(", ")}. `
+      + (latest ? `They are the players on the roster for the first game of the season who played the most in their latest season, each as of that season; players on two-way contracts (who play mostly in the G League) are left out, and so are rookies, who have no NBA data yet.`
+                : `They are the players who played the most for the team that season, each as of that season${entry.thin ? `; ${entry.thin} with under ${thin} offensive possessions are left out` : ""}.`)
+      + `${ranked.complete ? "" : ` The search stopped after ${BEST_MOST} full forecasts; a five the quick check ranked lower could still belong in the top ten.`}`
+      + ` The last row is ${latest ? "the five projected to start the first game of the season" : "the five the team played most that season"}, for comparison; "vs" is each five's net minus that five's. ${KEY(opponent)}`;
+    for (const x of best.rows) {
+      $("best-status").textContent = "Adding the ranges";
+      const b = await ask(worker, { kind: "band", rows: x.five, rule, opponent, search: `best-${id}` });
+      if (id !== best.seq) return;
+      x.band = b.band.margin;
+      drawBest();
+    }
+    $("best-status").textContent = best.done = `Done in ${took((performance.now() - t0) / 1000)}`;
+    $("best-status").classList.remove("busy");
+    Object.assign(best, { running: false, complete: true });
+  }
+  function useBest(key) {
+    const x = key === "ref" ? best.rows.find((y) => y.current) : best.rows.filter((y) => !y.current)[Number(key)];
+    if (!x) return;                                // a list being replaced (QA 2026-10-19: a TypeError)
+    const P = state.meta.players;
+    x.five.forEach((r, i) => setSlot("a", i, P.pid[r], P.season[r]));
+    best.used = key;
+    const also = matchSearchOpponent(best.opponent);
+    drawBest();
+    pieceSlots();
+    run();
+    $("best-status").innerHTML = `<strong>${escapeHtml(fiveNames(x.five, best.pool).join(" · "))} is now Team A: <a href="#result">see the forecast</a>.</strong>${escapeHtml(also)}`;
+  }
+  function bestChanged() {                         // Team B or the rule changed: is the list still for them?
+    if (!TEAMS) return;
+    if (best.used !== null && best.used !== undefined) {   // Team A changed some other way: the row is no longer in Team A (QA 2026-10-19)
+      const x = best.used === "ref" ? best.rows.find((y) => y.current) : best.rows.filter((y) => !y.current)[Number(best.used)];
+      const now = teamPairs("a"), P = state.meta.players;
+      if (!x || !now || fiveKey(now) !== fiveKey(x.five.map((r) => [P.pid[r], P.season[r]]))) {
+        best.used = null;
+        if (best.rows.length) drawBest();
+        if (/is now Team A/.test($("best-status").textContent)) $("best-status").textContent = best.done || "";
+      }
+    }
+    if (best.teamB !== state.teamB) { best.teamB = state.teamB; $("best-against").value = state.teamB === "five" ? "b" : "average"; }
+    bestHint();
+    if (best.blocked) { $("best-status").textContent = best.rows.length ? "Click Find to search again." : ""; best.blocked = false; }
+    if (!best.rows.length) return;
+    const b = best.opponent ? teamB() : null;
+    const same = state.rule === best.rule && (!best.opponent || (b && b.every((r, k) => r === best.opponent[k])));
+    if (!same && !$("best").classList.contains("stale")) {
+      $("best").classList.add("stale");
+      $("best-status").textContent = "Team B or the player levels changed: find again.";
+      $("best-status").classList.remove("busy"); best.seq++;
+      Object.assign(best, { running: false, staleBy: "teams" });
+    } else if (same && best.staleBy === "teams" && best.complete) {   // changed back: the finished list is current again
+      $("best").classList.remove("stale");
+      $("best-status").textContent = best.done;
+      best.staleBy = null;
+    }
+  }
+  const bestPicked = () => {                       // a new team, season or opponent: a list (or a search) is for the old one
+    try { localStorage.setItem(BEST_KEY, JSON.stringify({ season: Number($("best-season").value), team: $("best-team").value })); } catch (e) { /* private window */ }
+    if (!best.rows.length && !best.running) return;
+    best.seq++;
+    Object.assign(best, { running: false, complete: false, staleBy: "picked" });
+    $("best").classList.add("stale");
+    $("best-status").textContent = "Click Find to search again.";
+    $("best-status").classList.remove("busy");
+  };
+  $("best-season").addEventListener("change", () => { bestTeams(); bestPicked(); });
+  $("best-team").addEventListener("change", bestPicked);
+  $("best-against").addEventListener("change", () => { bestHint(); bestPicked(); });
+  $("best-go").addEventListener("click", () => findBest().catch((err) => {
+    $("best-status").textContent = "The search stopped: " + (err && err.message || err);
+    $("best-status").classList.remove("busy");
+  }));
+  $("best-table").addEventListener("click", (ev) => {
+    const b = ev.target.closest(".use");
+    if (b && !$("best").classList.contains("stale")) useBest(b.dataset.k);
   });
 
   // ---- worker -------------------------------------------------------------------------------
@@ -1397,8 +1725,8 @@ details.assume { min-width: 0; }
           self.postMessage({ ready: true }); return;
         }
         if (m.kind === "profile") { self.postMessage({ id: m.id, kind: "profile", row: m.row, profile: model.profile(m.row) }); return; }
-        if (m.kind === "screen") {
-          self.postMessage({ id: m.id, kind: m.kind, scores: model.search.screen(m.core, m.candidates, m.rule, null, m.opponent) }); return;
+        if (m.kind === "screen-fives") {
+          self.postMessage({ id: m.id, kind: m.kind, scores: model.search.screenFives(m.fives, m.rule, m.opponent) }); return;
         }
         if (m.kind === "forecast") {
           self.postMessage({ id: m.id, kind: m.kind, results: m.fives.map((rows) => model.search.forecast(rows, m.rule, m.opponent)) }); return;
@@ -1437,6 +1765,8 @@ details.assume { min-width: 0; }
         shownAt = now;
         setStatus(`Loading the model: ${(loaded / 1e6).toFixed(1)}${total ? ` of ${(total / 1e6).toFixed(1)}` : ""} MB.`
           + (loading ? " You can pick players meanwhile; the forecast appears when it has loaded." : ""), true);
+        const wait = `The search starts once the model has loaded (${(loaded / 1e6).toFixed(1)}${total ? ` of ${(total / 1e6).toFixed(1)}` : ""} MB so far).`;
+        if (!state.ready) { $("piece-status").textContent = wait; $("best-status").textContent = wait; }   // QA 2026-10-19: progress where you are waiting
       };
       const readAll = async (r) => {
         if (!r.body || !r.body.getReader) return r.text();
@@ -1466,9 +1796,11 @@ details.assume { min-width: 0; }
       buildDirectory(meta);
       drawLibrary(meta);
       teamCard("a"); teamCard("b");
-      if (!restoreTeams()) loadPreset("a", PRESETS[0]);
+      if (!restoreTeams()) { if (ROSTERS) loadTeam("a", DEFAULT_TEAM); else loadPreset("a", PRESETS[0]); }
       pieceSlots();
       pieceChanged();
+      bestInit();
+      bestChanged();
       if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { state.resultInView = e.isIntersecting; miniShow(); }).observe($("result"));
       loading = true; shownAt = 0; progress();
       const [weights, players] = await Promise.all([get("weights.txt"), get("players.txt")]);
@@ -1477,7 +1809,7 @@ details.assume { min-width: 0; }
       worker = new Worker(URL.createObjectURL(new Blob([source], { type: "text/javascript" })));
       worker.onmessage = (ev) => {
         const m = ev.data;
-        if (m.ready) { state.ready = true; $("piece-go").disabled = false; $("piece-status").textContent = ""; run(); return; }
+        if (m.ready) { state.ready = true; $("piece-go").disabled = false; $("piece-status").textContent = ""; $("best-go").disabled = !TEAMS; $("best-status").textContent = ""; run(); return; }
         if (PIECE_KINDS.has(m.kind)) { pieceReply(m); return; }
         if (m.kind === "profile") { if (m.error) $("sheet-content").innerHTML = `<p class="note">${escapeHtml(m.error)}</p>`; else drawSheet(m.row, m.profile); return; }
         if (m.id !== state.seq) return;          // a newer request superseded this one

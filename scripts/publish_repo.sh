@@ -11,14 +11,14 @@
 # request to Sports Reference says):
 #   - the downloader: lineups/ingest.py, tests/test_ingest.py, scripts/rescrape_pages.py,
 #     scripts/rescrape_pilot.py, scripts/after_download.sh;
-#   - data: the golden test fixtures (rows from five 2020 games) and tool/five.html (the retired page,
-#     which embeds its player data).
+#   - data: the golden test fixtures (rows from five 2020 games), tool/five.html (the retired page,
+#     which embeds its player data) and tool/rosters_2026_27.json (its starts come from the play-by-play).
 set -euo pipefail
 DEST=${1:?usage: publish_repo.sh DEST "message"}; MSG=${2:?usage: publish_repo.sh DEST "message"}
 REPO=${0:A:h:h}
 EXCLUDE=(lineups/ingest.py tests/test_ingest.py scripts/rescrape_pages.py scripts/rescrape_pilot.py
          scripts/after_download.sh tool/five.html tests/fixtures/reference_2020q1_s17.npz
-         tests/fixtures/reference_2020q1_s17.pt tests/fixtures/history_2020q1_final.npz)
+         tests/fixtures/reference_2020q1_s17.pt tests/fixtures/history_2020q1_final.npz tool/rosters_2026_27.json)
 NAME="Adam Levin"; EMAIL="6889910+adamwlev@users.noreply.github.com"
 [[ -z $(git -C $REPO status --porcelain --untracked-files=no) ]] || { echo "commit first: HEAD is what is published" >&2; exit 1; }
 for f in $EXCLUDE; do
